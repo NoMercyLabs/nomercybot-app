@@ -47,7 +47,7 @@ export function TimersScreen() {
         ) : timers.length === 0 ? (
           <EmptyState
             title="No timers yet"
-            description="Create a timer to automatically post messages at set intervals."
+            message="Create a timer to automatically post messages at set intervals."
             actionLabel="Create Timer"
             onAction={() => router.push('/(dashboard)/timers/new' as any)}
           />

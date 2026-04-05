@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { View, Text, Pressable, ScrollView } from 'react-native'
-import { useForm, Controller, useFieldArray } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Plus, Trash2 } from 'lucide-react-native'
@@ -13,7 +13,6 @@ import type { Timer, TimerCreate, TimerUpdate } from '../types'
 
 const schema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
-  messages: z.array(z.string().min(1, 'Message cannot be empty')).min(1, 'Add at least one message'),
   intervalMinutes: z.number().min(1, 'Minimum 1 minute').max(1440, 'Maximum 24 hours'),
   minChatLines: z.number().min(0).max(1000),
   isEnabled: z.boolean(),
@@ -28,6 +27,10 @@ interface TimerFormProps {
 }
 
 export function TimerForm({ timer, onSubmit, isSubmitting }: TimerFormProps) {
+  const [messages, setMessages] = useState<string[]>(
+    timer?.messages?.length ? timer.messages : [''],
+  )
+
   const {
     control,
     handleSubmit,
@@ -36,17 +39,29 @@ export function TimerForm({ timer, onSubmit, isSubmitting }: TimerFormProps) {
     resolver: zodResolver(schema),
     defaultValues: {
       name: timer?.name ?? '',
-      messages: timer?.messages?.length ? timer.messages : [''],
       intervalMinutes: timer?.intervalMinutes ?? 30,
       minChatLines: timer?.minChatLines ?? 0,
       isEnabled: timer?.isEnabled ?? true,
     },
   })
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: 'messages' as any,
-  })
+  function addMessage() {
+    setMessages((prev) => [...prev, ''])
+  }
+
+  function removeMessage(index: number) {
+    setMessages((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  function updateMessage(index: number, value: string) {
+    setMessages((prev) => prev.map((m, i) => (i === index ? value : m)))
+  }
+
+  async function handleFormSubmit(data: FormData) {
+    const filtered = messages.filter((m) => m.trim().length > 0)
+    if (filtered.length === 0) return
+    await onSubmit({ ...data, messages: filtered })
+  }
 
   return (
     <ScrollView showsVerticalScrollIndicator={false}>
@@ -71,25 +86,19 @@ export function TimerForm({ timer, onSubmit, isSubmitting }: TimerFormProps) {
           <Text className="text-xs text-gray-500">
             The bot will cycle through these messages in order.
           </Text>
-          {fields.map((field, index) => (
-            <View key={field.id} className="flex-row items-start gap-2">
+          {messages.map((msg, index) => (
+            <View key={index} className="flex-row items-start gap-2">
               <View className="flex-1">
-                <Controller
-                  control={control}
-                  name={`messages.${index}` as any}
-                  render={({ field: { onChange, value } }) => (
-                    <Textarea
-                      placeholder={`Message ${index + 1}...`}
-                      value={value as string}
-                      onChangeText={onChange}
-                      rows={2}
-                    />
-                  )}
+                <Textarea
+                  placeholder={`Message ${index + 1}...`}
+                  value={msg}
+                  onChangeText={(v) => updateMessage(index, v)}
+                  rows={2}
                 />
               </View>
-              {fields.length > 1 && (
+              {messages.length > 1 && (
                 <Pressable
-                  onPress={() => remove(index)}
+                  onPress={() => removeMessage(index)}
                   className="mt-1 rounded-md p-2 active:bg-surface-overlay"
                 >
                   <Trash2 size={16} color="#ef4444" />
@@ -97,13 +106,13 @@ export function TimerForm({ timer, onSubmit, isSubmitting }: TimerFormProps) {
               )}
             </View>
           ))}
-          {errors.messages && (
-            <Text className="text-xs text-red-400">{errors.messages.message as string}</Text>
+          {messages.filter((m) => m.trim()).length === 0 && (
+            <Text className="text-xs text-red-400">Add at least one message</Text>
           )}
           <Button
             variant="ghost"
             size="sm"
-            onPress={() => append('')}
+            onPress={addMessage}
             leftIcon={<Plus size={14} color="#8889a0" />}
             label="Add Message"
           />
@@ -123,7 +132,6 @@ export function TimerForm({ timer, onSubmit, isSubmitting }: TimerFormProps) {
                 onChangeText={(v) => onChange(parseInt(v, 10) || 1)}
                 keyboardType="numeric"
                 error={errors.intervalMinutes?.message}
-                description="How often to post a message"
               />
             )}
           />
@@ -138,7 +146,6 @@ export function TimerForm({ timer, onSubmit, isSubmitting }: TimerFormProps) {
                 value={String(value)}
                 onChangeText={(v) => onChange(parseInt(v, 10) || 0)}
                 keyboardType="numeric"
-                description="Minimum chat activity required before posting (0 = always post)"
               />
             )}
           />
@@ -159,7 +166,7 @@ export function TimerForm({ timer, onSubmit, isSubmitting }: TimerFormProps) {
 
         <Button
           label={isSubmitting ? 'Saving...' : 'Save Timer'}
-          onPress={handleSubmit(onSubmit as any)}
+          onPress={handleSubmit(handleFormSubmit)}
           loading={isSubmitting}
           className="mt-2"
         />

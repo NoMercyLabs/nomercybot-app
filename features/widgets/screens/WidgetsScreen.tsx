@@ -223,7 +223,7 @@ export function WidgetsScreen() {
         ) : widgets.length === 0 ? (
           <EmptyState
             title="No widgets yet"
-            description="Create overlay widgets to display alerts, chat, goals, and more on your stream."
+            message="Create overlay widgets to display alerts, chat, goals, and more on your stream."
             actionLabel="Add Widget"
             onAction={() => setShowCreate(true)}
           />

@@ -139,7 +139,6 @@ export function SettingsScreen() {
                 onChangeText={(v) => patchSetting('prefix', v)}
                 autoCapitalize="none"
                 maxLength={5}
-                description="Prefix for all commands (e.g. !, /, ?)"
               />
               <Select
                 label="Bot Language"
@@ -279,7 +278,6 @@ export function SettingsScreen() {
                 value={String(settings?.ttsVolume ?? 80)}
                 onChangeText={(v) => patchSetting('ttsVolume', parseInt(v, 10) || 80)}
                 keyboardType="numeric"
-                description="TTS output volume level"
               />
             </Card>
 
