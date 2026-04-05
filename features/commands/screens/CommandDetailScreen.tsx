@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Toggle } from '@/components/ui/Toggle'
 import { Select } from '@/components/ui/Select'
+import { ErrorBoundary } from '@/components/feedback/ErrorBoundary'
 
 const commandSchema = z.object({
   name: z.string().min(1).startsWith('!'),
@@ -61,6 +62,7 @@ export function CommandDetailScreen() {
   })
 
   return (
+    <ErrorBoundary>
     <ScrollView className="flex-1 bg-gray-950" contentContainerClassName="p-4 gap-4">
       <PageHeader
         title={isNew ? 'New Command' : name}
@@ -137,5 +139,6 @@ export function CommandDetailScreen() {
         />
       </View>
     </ScrollView>
+    </ErrorBoundary>
   )
 }

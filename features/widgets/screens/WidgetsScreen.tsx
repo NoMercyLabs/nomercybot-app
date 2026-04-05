@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Pressable, Modal, Alert, Platform } from 'react-native'
+import { View, Text, ScrollView, Pressable, Modal, Alert, Platform, RefreshControl } from 'react-native'
 import { useState } from 'react'
 import { router } from 'expo-router'
 import {
@@ -14,6 +14,7 @@ import { Toggle } from '@/components/ui/Toggle'
 import { Modal as AppModal } from '@/components/ui/Modal'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { ErrorBoundary } from '@/components/feedback/ErrorBoundary'
 import { useWidgets } from '../hooks/useWidgets'
 import { useToast } from '@/hooks/useToast'
 import { WIDGET_TYPE_LABELS, WIDGET_TYPE_DESCRIPTIONS, type WidgetType, type Widget } from '../types'
@@ -145,7 +146,7 @@ function CreateWidgetModal({ visible, onClose, onCreate }: {
 }
 
 export function WidgetsScreen() {
-  const { widgets, isLoading, createWidget, updateWidget, deleteWidget } = useWidgets()
+  const { widgets, isLoading, isRefetching, refetch, createWidget, updateWidget, deleteWidget } = useWidgets()
   const toast = useToast()
   const [showCreate, setShowCreate] = useState(false)
 
@@ -199,6 +200,7 @@ export function WidgetsScreen() {
   }
 
   return (
+    <ErrorBoundary>
     <View className="flex-1 bg-gray-950">
       <PageHeader
         title="Widgets"
@@ -213,7 +215,11 @@ export function WidgetsScreen() {
         }
       />
 
-      <ScrollView className="flex-1" contentContainerClassName="px-4 py-4 gap-3">
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="px-4 py-4 gap-3"
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
+      >
         {isLoading ? (
           <View className="gap-3">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -256,5 +262,6 @@ export function WidgetsScreen() {
         onCreate={handleCreate}
       />
     </View>
+    </ErrorBoundary>
   )
 }

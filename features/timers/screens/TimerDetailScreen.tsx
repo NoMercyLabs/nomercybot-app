@@ -4,6 +4,7 @@ import { Trash2 } from 'lucide-react-native'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/Button'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { ErrorBoundary } from '@/components/feedback/ErrorBoundary'
 import { TimerForm } from '../components/TimerForm'
 import { useTimers, useTimer } from '../hooks/useTimers'
 import { useToast } from '@/hooks/useToast'
@@ -58,6 +59,7 @@ export function TimerDetailScreen({ timerId }: TimerDetailScreenProps) {
   }
 
   return (
+    <ErrorBoundary>
     <View className="flex-1 bg-gray-950">
       <PageHeader
         title={isNew ? 'New Timer' : 'Edit Timer'}
@@ -91,5 +93,6 @@ export function TimerDetailScreen({ timerId }: TimerDetailScreenProps) {
         )}
       </ScrollView>
     </View>
+    </ErrorBoundary>
   )
 }

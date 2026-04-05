@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Pressable, Linking } from 'react-native'
+import { View, Text, ScrollView, Pressable, Linking, RefreshControl } from 'react-native'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/useAuthStore'
@@ -14,6 +14,8 @@ import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Badge } from '@/components/ui/Badge'
 import { ColorPicker } from '@/components/ui/ColorPicker'
+import { Skeleton } from '@/components/ui/Skeleton'
+import { ErrorBoundary } from '@/components/feedback/ErrorBoundary'
 import { useToast } from '@/hooks/useToast'
 import { useTranslation } from 'react-i18next'
 import { loadNamespace } from '@/lib/i18n/resources'
@@ -69,7 +71,7 @@ export function SettingsScreen() {
   const broadcasterId = useChannelStore((s) => s.currentChannel?.broadcasterId)
   const qc = useQueryClient()
 
-  const { data: settings, isLoading: settingsLoading } = useQuery<BotSettings>({
+  const { data: settings, isLoading: settingsLoading, isRefetching: settingsRefetching, refetch: refetchSettings } = useQuery<BotSettings>({
     queryKey: ['settings', broadcasterId],
     queryFn: () => apiClient.get(`/api/${broadcasterId}/settings`).then((r) => r.data),
     enabled: !!broadcasterId,
@@ -122,59 +124,74 @@ export function SettingsScreen() {
   }
 
   return (
+    <ErrorBoundary>
     <View className="flex-1 bg-gray-950">
       <PageHeader title="Settings" />
       <Tabs tabs={SETTINGS_TABS} activeTab={tab} onTabChange={setTab} className="px-2" />
 
-      <ScrollView className="flex-1" contentContainerClassName="p-4 gap-4">
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="p-4 gap-4"
+        refreshControl={<RefreshControl refreshing={settingsRefetching} onRefresh={refetchSettings} />}
+      >
 
         {/* Bot Settings */}
         {tab === 'bot' && (
           <>
-            <Card className="gap-4">
-              <Text className="text-sm font-semibold text-gray-300">Bot Configuration</Text>
-              <Input
-                label="Command Prefix"
-                value={settings?.prefix ?? '!'}
-                onChangeText={(v) => patchSetting('prefix', v)}
-                autoCapitalize="none"
-                maxLength={5}
-              />
-              <Select
-                label="Bot Language"
-                value={settings?.language ?? 'en'}
-                onValueChange={(v) => patchSetting('language', v)}
-                options={LANGUAGES}
-              />
-            </Card>
+            {settingsLoading ? (
+              <View className="gap-4">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton key={i} className="h-24 rounded-xl" />
+                ))}
+              </View>
+            ) : (
+              <>
+                <Card className="gap-4">
+                  <Text className="text-sm font-semibold text-gray-300">Bot Configuration</Text>
+                  <Input
+                    label="Command Prefix"
+                    value={settings?.prefix ?? '!'}
+                    onChangeText={(v) => patchSetting('prefix', v)}
+                    autoCapitalize="none"
+                    maxLength={5}
+                  />
+                  <Select
+                    label="Bot Language"
+                    value={settings?.language ?? 'en'}
+                    onValueChange={(v) => patchSetting('language', v)}
+                    options={LANGUAGES}
+                  />
+                </Card>
 
-            <Card className="gap-4">
-              <Text className="text-sm font-semibold text-gray-300">Features</Text>
-              <Toggle
-                label="Moderation"
-                description="Enable automated moderation features"
-                value={settings?.enableModeration ?? false}
-                onValueChange={(v) => patchSetting('enableModeration', v)}
-              />
-              <Toggle
-                label="Music"
-                description="Enable music queue and controls"
-                value={settings?.enableMusic ?? false}
-                onValueChange={(v) => patchSetting('enableMusic', v)}
-              />
-              <Toggle
-                label="Pipelines"
-                description="Enable automation pipelines"
-                value={settings?.enablePipelines ?? false}
-                onValueChange={(v) => patchSetting('enablePipelines', v)}
-              />
-              <Toggle
-                label="Text-to-Speech"
-                description="Read chat messages aloud via TTS"
-                value={settings?.enableTts ?? false}
-                onValueChange={(v) => patchSetting('enableTts', v)}
-              />
-            </Card>
+                <Card className="gap-4">
+                  <Text className="text-sm font-semibold text-gray-300">Features</Text>
+                  <Toggle
+                    label="Moderation"
+                    description="Enable automated moderation features"
+                    value={settings?.enableModeration ?? false}
+                    onValueChange={(v) => patchSetting('enableModeration', v)}
+                  />
+                  <Toggle
+                    label="Music"
+                    description="Enable music queue and controls"
+                    value={settings?.enableMusic ?? false}
+                    onValueChange={(v) => patchSetting('enableMusic', v)}
+                  />
+                  <Toggle
+                    label="Pipelines"
+                    description="Enable automation pipelines"
+                    value={settings?.enablePipelines ?? false}
+                    onValueChange={(v) => patchSetting('enablePipelines', v)}
+                  />
+                  <Toggle
+                    label="Text-to-Speech"
+                    description="Read chat messages aloud via TTS"
+                    value={settings?.enableTts ?? false}
+                    onValueChange={(v) => patchSetting('enableTts', v)}
+                  />
+                </Card>
+              </>
+            )}
           </>
         )}
 
@@ -430,5 +447,6 @@ export function SettingsScreen() {
         )}
       </ScrollView>
     </View>
+    </ErrorBoundary>
   )
 }

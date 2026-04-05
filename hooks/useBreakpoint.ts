@@ -45,7 +45,6 @@ export function useBreakpoint() {
   return {
     width,
     breakpoint,
-    isMobile: breakpoint === 'sm',
     isPhone,
     isTablet,
     isDesktop,

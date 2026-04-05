@@ -7,6 +7,7 @@ import {
   Pressable,
   RefreshControl,
 } from 'react-native'
+import { ErrorBoundary } from '@/components/feedback/ErrorBoundary'
 import { Image } from 'expo-image'
 import { router } from 'expo-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -249,6 +250,7 @@ export function CommunityScreen() {
   const channelId = useChannelStore((s) => s.currentChannel?.id) ?? ''
 
   return (
+    <ErrorBoundary>
     <View className="flex-1 bg-gray-950">
       <PageHeader title="Community" />
 
@@ -279,5 +281,6 @@ export function CommunityScreen() {
         <BansTab channelId={channelId} />
       )}
     </View>
+    </ErrorBoundary>
   )
 }

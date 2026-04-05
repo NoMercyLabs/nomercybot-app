@@ -7,6 +7,7 @@ import {
   TextInput,
   RefreshControl,
 } from 'react-native'
+import { ErrorBoundary } from '@/components/feedback/ErrorBoundary'
 import { Image } from 'expo-image'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { formatDistanceToNow } from 'date-fns'
@@ -412,6 +413,7 @@ export function MusicScreen() {
   })
 
   return (
+    <ErrorBoundary>
     <View className="flex-1 bg-gray-950">
       <PageHeader title={t('title')} />
 
@@ -442,5 +444,6 @@ export function MusicScreen() {
         {activeTab === 'history' && <HistoryTab channelId={channelId} />}
       </View>
     </View>
+    </ErrorBoundary>
   )
 }

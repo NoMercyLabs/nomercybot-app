@@ -31,7 +31,7 @@ export default function DashboardLayout() {
     if (isTablet && !isDesktop) {
       setSidebarCollapsed(true)
     }
-  }, [isTablet, isDesktop])
+  }, [isTablet, isDesktop, setSidebarCollapsed])
 
   if (isLoading) return null
 

@@ -24,9 +24,9 @@ export const useAppStore = create<AppState>()(
     {
       name: 'nomercybot-app',
       storage: createJSONStorage(() => appStorage),
-      partialState: (state: AppState) => ({
+      partialize: (state: AppState) => ({
         sidebarCollapsed: state.sidebarCollapsed,
       }),
-    } as any,
+    },
   ),
 )

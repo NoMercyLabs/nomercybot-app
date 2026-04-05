@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Plus, Terminal } from 'lucide-react-native'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Text } from 'react-native'
+import { ErrorBoundary } from '@/components/feedback/ErrorBoundary'
 import type { Command } from '../types'
 
 export function CommandsScreen() {
@@ -49,29 +50,31 @@ export function CommandsScreen() {
   ]
 
   return (
-    <View className="flex-1 bg-gray-950">
-      <View className="px-4 pt-4">
-        <PageHeader
-          title={t('title')}
-          rightContent={
-            <Button
-              size="sm"
-              onPress={() => router.push('/(dashboard)/commands/new' as any)}
-              leftIcon={<Plus size={14} color="white" />}
-            >
-              {t('addNew')}
-            </Button>
-          }
+    <ErrorBoundary>
+      <View className="flex-1 bg-gray-950">
+        <View className="px-4 pt-4">
+          <PageHeader
+            title={t('title')}
+            rightContent={
+              <Button
+                size="sm"
+                onPress={() => router.push('/(dashboard)/commands/new' as any)}
+                leftIcon={<Plus size={14} color="white" />}
+              >
+                {t('addNew')}
+              </Button>
+            }
+          />
+        </View>
+        <DataTable
+          columns={columns}
+          data={data ?? []}
+          keyExtractor={(cmd) => cmd.id}
+          isLoading={isLoading}
+          onRowPress={(cmd) => router.push(`/(dashboard)/commands/${cmd.name}` as any)}
+          emptyMessage={t('empty.title')}
         />
       </View>
-      <DataTable
-        columns={columns}
-        data={data ?? []}
-        keyExtractor={(cmd) => cmd.id}
-        isLoading={isLoading}
-        onRowPress={(cmd) => router.push(`/(dashboard)/commands/${cmd.name}` as any)}
-        emptyMessage={t('empty.title')}
-      />
-    </View>
+    </ErrorBoundary>
   )
 }

@@ -5,6 +5,7 @@ import {
   RefreshControl,
   Pressable,
 } from 'react-native'
+import { ErrorBoundary } from '@/components/feedback/ErrorBoundary'
 import { useState, useEffect } from 'react'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -636,14 +637,16 @@ export function ModerationScreen() {
   ]
 
   return (
-    <View className="flex-1 bg-gray-950">
-      <View className="px-4 pt-4">
-        <PageHeader title="Moderation" />
+    <ErrorBoundary>
+      <View className="flex-1 bg-gray-950">
+        <View className="px-4 pt-4">
+          <PageHeader title="Moderation" />
+        </View>
+        <Tabs tabs={tabs} activeTab={tab} onTabChange={setTab} className="px-2" />
+        {tab === 'automod' && <AutoModTab />}
+        {tab === 'bans' && <BansTab />}
+        {tab === 'log' && <ModLogTab />}
       </View>
-      <Tabs tabs={tabs} activeTab={tab} onTabChange={setTab} className="px-2" />
-      {tab === 'automod' && <AutoModTab />}
-      {tab === 'bans' && <BansTab />}
-      {tab === 'log' && <ModLogTab />}
-    </View>
+    </ErrorBoundary>
   )
 }

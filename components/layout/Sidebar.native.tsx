@@ -62,10 +62,6 @@ const NAV_SECTIONS: NavSection[] = [
 ]
 
 export function Sidebar() {
-  return <SidebarNative />
-}
-
-function SidebarNative() {
   const router = useRouter()
   const pathname = usePathname()
   const { sidebarCollapsed, toggleSidebar } = useAppStore()

@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Send, X, Ban, Clock, Trash2, Shield, ChevronDown } from 'lucide-react-native'
+import { ErrorBoundary } from '@/components/feedback/ErrorBoundary'
 import type { ChatMessagePayload } from '@/types/signalr'
 
 type ChatMsg = ChatMessagePayload & { _key: string; isDeleted?: boolean }
@@ -204,6 +205,7 @@ export function ChatScreen() {
   }
 
   return (
+    <ErrorBoundary>
     <KeyboardAvoidingView
       className="flex-1 bg-gray-950"
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -304,5 +306,6 @@ export function ChatScreen() {
         </Pressable>
       </Modal>
     </KeyboardAvoidingView>
+    </ErrorBoundary>
   )
 }
