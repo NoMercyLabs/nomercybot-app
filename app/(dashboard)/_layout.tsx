@@ -19,7 +19,7 @@ import {
 export default function DashboardLayout() {
   const { isAuthenticated, isLoading } = useAuth()
   const { currentChannel } = useChannel()
-  const { isDesktop } = useBreakpoint()
+  const { isDesktop, isTablet } = useBreakpoint()
 
   useRealtimeChannel()
 
@@ -28,7 +28,9 @@ export default function DashboardLayout() {
   if (!isAuthenticated) return <Redirect href="/(auth)/login" />
   if (!currentChannel) return <Redirect href="/(auth)/onboarding" />
 
-  if (Platform.OS === 'web' || isDesktop) {
+  // Web: full sidebar dashboard
+  // Tablet: collapsible sidebar (no bottom tabs)
+  if (isDesktop || isTablet) {
     return (
       <View className="flex-1 flex-row bg-surface">
         <Sidebar />
@@ -45,6 +47,7 @@ export default function DashboardLayout() {
     )
   }
 
+  // Phone: bottom tabs with 5 key tabs
   return (
     <Tabs
       screenOptions={{

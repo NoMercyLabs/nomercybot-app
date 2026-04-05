@@ -31,16 +31,23 @@ export function useBreakpoint() {
     return () => subscription.remove()
   }, [])
 
+  const isWeb = Platform.OS === 'web'
+
   const isTablet =
-    Device.deviceType === Device.DeviceType.TABLET ||
+    (!isWeb && Device.deviceType === Device.DeviceType.TABLET) ||
     (Platform.OS !== 'web' && width >= BREAKPOINTS.md && width < BREAKPOINTS.lg)
+
+  const isDesktop = isWeb || width > BREAKPOINTS.lg
+
+  const isPhone = !isTablet && !isDesktop
 
   return {
     width,
     breakpoint,
     isMobile: breakpoint === 'sm',
+    isPhone,
     isTablet,
-    isDesktop: Platform.OS === 'web' || ['lg', 'xl', '2xl'].includes(breakpoint),
+    isDesktop,
     isAtLeast: (bp: Breakpoint) => width >= BREAKPOINTS[bp],
   }
 }
