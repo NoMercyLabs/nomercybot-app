@@ -86,6 +86,7 @@ export default function DashboardLayout() {
       <Tabs.Screen name="integrations" options={{ href: null }} />
       <Tabs.Screen name="permissions" options={{ href: null }} />
       <Tabs.Screen name="billing" options={{ href: null }} />
+      <Tabs.Screen name="timers" options={{ href: null }} />
       <Tabs.Screen name="my-data" options={{ href: null }} />
     </Tabs>
   )

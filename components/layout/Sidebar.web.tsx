@@ -4,7 +4,7 @@ import { useAppStore } from '@/stores/useAppStore'
 import { cn } from '@/lib/utils/cn'
 import {
   LayoutDashboard, Terminal, Gift, MessageSquare, Shield, Music, Puzzle,
-  Layers, Radio, Users, Link, Key, Settings, ChevronLeft, ChevronRight,
+  Layers, Radio, Users, Link, Key, Settings, ChevronLeft, ChevronRight, Clock,
 } from 'lucide-react-native'
 
 interface NavItem {
@@ -17,6 +17,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', href: '/(dashboard)', icon: <LayoutDashboard size={18} /> },
   { label: 'Commands', href: '/(dashboard)/commands', icon: <Terminal size={18} /> },
   { label: 'Rewards', href: '/(dashboard)/rewards', icon: <Gift size={18} /> },
+  { label: 'Timers', href: '/(dashboard)/timers', icon: <Clock size={18} /> },
   { label: 'Chat', href: '/(dashboard)/chat', icon: <MessageSquare size={18} /> },
   { label: 'Moderation', href: '/(dashboard)/moderation', icon: <Shield size={18} /> },
   { label: 'Music', href: '/(dashboard)/music', icon: <Music size={18} /> },

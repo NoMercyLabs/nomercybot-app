@@ -1,57 +1,235 @@
-import { ScrollView, View, Text } from 'react-native'
-import { useApiQuery } from '@/hooks/useApi'
+import { ScrollView, View, Text, Pressable } from 'react-native'
+import { router } from 'expo-router'
 import { useChannel } from '@/hooks/useChannel'
+import { useQuery } from '@tanstack/react-query'
+import { apiClient } from '@/lib/api/client'
+import { useChannelStore } from '@/stores/useChannelStore'
+import { useActivityFeed } from '@/features/dashboard/hooks/useActivityFeed'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Card } from '@/components/ui/Card'
+import { Badge } from '@/components/ui/Badge'
 import { Skeleton } from '@/components/ui/Skeleton'
-import { formatNumber } from '@/lib/utils/format'
-import { Users, MessageSquare, Terminal, Zap } from 'lucide-react-native'
+import { formatNumber, formatRelativeTime } from '@/lib/utils/format'
+import {
+  Users, UserPlus, MessageSquare, Terminal, Clock, Zap,
+  Heart, Star, Radio, Gift, ChevronRight,
+} from 'lucide-react-native'
+import type { DashboardStats, ActivityEvent } from '@/features/dashboard/types'
 
-interface DashboardStats {
-  viewerCount: number
-  followerCount: number
-  commandsUsed: number
-  messagesCount: number
-  isLive: boolean
+const QUICK_ACTIONS = [
+  { label: 'Commands', href: '/(dashboard)/commands', icon: Terminal, color: '#a855f7' },
+  { label: 'Timers', href: '/(dashboard)/timers', icon: Clock, color: '#3b82f6' },
+  { label: 'Chat', href: '/(dashboard)/chat', icon: MessageSquare, color: '#10b981' },
+  { label: 'Pipelines', href: '/(dashboard)/pipelines', icon: Zap, color: '#f59e0b' },
+]
+
+const EVENT_ICONS: Record<ActivityEvent['type'], typeof Heart> = {
+  follow: Heart,
+  subscribe: Star,
+  raid: Radio,
+  cheer: Zap,
+  command: Terminal,
+  redemption: Gift,
+}
+
+const EVENT_COLORS: Record<ActivityEvent['type'], string> = {
+  follow: '#ec4899',
+  subscribe: '#a855f7',
+  raid: '#ef4444',
+  cheer: '#f59e0b',
+  command: '#6b7280',
+  redemption: '#06b6d4',
+}
+
+const EVENT_LABELS: Record<ActivityEvent['type'], string> = {
+  follow: 'followed',
+  subscribe: 'subscribed',
+  raid: 'raided',
+  cheer: 'cheered',
+  command: 'used a command',
+  redemption: 'redeemed a reward',
 }
 
 export default function DashboardScreen() {
   const { currentChannel } = useChannel()
-  const { data: stats, isLoading } = useApiQuery<DashboardStats>('stats', '/stats')
+  const broadcasterId = useChannelStore((s) => s.currentChannel?.broadcasterId)
+  const { events } = useActivityFeed()
+
+  const { data: stats, isLoading } = useQuery<DashboardStats>({
+    queryKey: ['dashboard', 'stats', broadcasterId],
+    queryFn: () => apiClient.get(`/api/dashboard/${broadcasterId}/stats`).then((r) => r.data),
+    enabled: !!broadcasterId,
+    refetchInterval: 30_000,
+  })
 
   return (
-    <ScrollView className="flex-1 bg-surface">
+    <ScrollView className="flex-1 bg-gray-950" contentContainerClassName="pb-8">
       <PageHeader
         title={currentChannel?.displayName ?? 'Dashboard'}
-        subtitle={stats?.isLive ? 'LIVE' : 'Offline'}
+        subtitle={stats?.streamTitle}
+        rightContent={
+          stats?.isLive ? (
+            <Badge variant="danger" label="LIVE" />
+          ) : (
+            <Badge variant="muted" label="Offline" />
+          )
+        }
       />
-      <View className="px-6 py-4 gap-4">
+
+      <View className="px-4 py-4 gap-5">
+        {/* Stream info bar */}
+        {stats?.gameName && (
+          <Card className="flex-row items-center gap-3 py-3">
+            <View className="flex-1">
+              <Text className="text-xs text-gray-500">Playing</Text>
+              <Text className="text-sm font-medium text-gray-200">{stats.gameName}</Text>
+            </View>
+            {stats.uptime != null && (
+              <View className="items-end">
+                <Text className="text-xs text-gray-500">Uptime</Text>
+                <Text className="text-sm font-medium text-gray-200">
+                  {Math.floor(stats.uptime / 3600)}h {Math.floor((stats.uptime % 3600) / 60)}m
+                </Text>
+              </View>
+            )}
+          </Card>
+        )}
+
+        {/* Stats grid */}
         {isLoading ? (
-          <View className="gap-3">
-            <Skeleton className="h-24 rounded-xl" />
-            <Skeleton className="h-24 rounded-xl" />
-            <Skeleton className="h-24 rounded-xl" />
-            <Skeleton className="h-24 rounded-xl" />
+          <View className="flex-row flex-wrap gap-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-24 flex-1 min-w-36 rounded-xl" />
+            ))}
           </View>
         ) : (
           <View className="flex-row flex-wrap gap-3">
-            <StatCard icon={<Users size={20} color="rgb(124,58,237)" />} label="Viewers" value={formatNumber(stats?.viewerCount ?? 0)} />
-            <StatCard icon={<Users size={20} color="rgb(59,130,246)" />} label="Followers" value={formatNumber(stats?.followerCount ?? 0)} />
-            <StatCard icon={<Terminal size={20} color="rgb(34,197,94)" />} label="Commands Used" value={formatNumber(stats?.commandsUsed ?? 0)} />
-            <StatCard icon={<MessageSquare size={20} color="rgb(249,115,22)" />} label="Messages" value={formatNumber(stats?.messagesCount ?? 0)} />
+            <StatCard
+              icon={<Users size={18} color="#a855f7" />}
+              label="Viewers"
+              value={formatNumber(stats?.viewerCount ?? 0)}
+              accent="#a855f7"
+            />
+            <StatCard
+              icon={<UserPlus size={18} color="#3b82f6" />}
+              label="Followers"
+              value={formatNumber(stats?.followerCount ?? 0)}
+              accent="#3b82f6"
+            />
+            <StatCard
+              icon={<Terminal size={18} color="#10b981" />}
+              label="Commands"
+              value={formatNumber(stats?.commandsUsed ?? 0)}
+              accent="#10b981"
+            />
+            <StatCard
+              icon={<MessageSquare size={18} color="#f59e0b" />}
+              label="Messages"
+              value={formatNumber(stats?.messagesCount ?? 0)}
+              accent="#f59e0b"
+            />
           </View>
         )}
+
+        {/* Quick actions */}
+        <View className="gap-2">
+          <Text className="text-xs font-semibold uppercase text-gray-500 px-1">Quick Access</Text>
+          <View className="flex-row flex-wrap gap-3">
+            {QUICK_ACTIONS.map((action) => {
+              const Icon = action.icon
+              return (
+                <Pressable
+                  key={action.href}
+                  onPress={() => router.push(action.href as any)}
+                  className="flex-1 min-w-[140px]"
+                >
+                  <Card className="flex-row items-center gap-3 active:opacity-80">
+                    <View
+                      className="h-9 w-9 items-center justify-center rounded-lg"
+                      style={{ backgroundColor: `${action.color}20` }}
+                    >
+                      <Icon size={18} color={action.color} />
+                    </View>
+                    <Text className="flex-1 text-sm font-medium text-gray-200">{action.label}</Text>
+                    <ChevronRight size={14} color="#5a5b72" />
+                  </Card>
+                </Pressable>
+              )
+            })}
+          </View>
+        </View>
+
+        {/* Recent activity */}
+        <View className="gap-2">
+          <Text className="text-xs font-semibold uppercase text-gray-500 px-1">Recent Activity</Text>
+          <Card className="gap-0 p-0 overflow-hidden">
+            {events.length === 0 ? (
+              <View className="items-center py-8">
+                <Text className="text-sm text-gray-600">No recent activity</Text>
+                <Text className="text-xs text-gray-700 mt-1">
+                  Events will appear here when your stream is live
+                </Text>
+              </View>
+            ) : (
+              events.slice(0, 10).map((event, index) => {
+                const Icon = EVENT_ICONS[event.type] ?? Zap
+                const color = EVENT_COLORS[event.type] ?? '#6b7280'
+                const label = EVENT_LABELS[event.type] ?? event.type
+                return (
+                  <View
+                    key={event.id}
+                    className={`flex-row items-center gap-3 px-4 py-3 ${index > 0 ? 'border-t border-border' : ''}`}
+                  >
+                    <View
+                      className="h-8 w-8 items-center justify-center rounded-full"
+                      style={{ backgroundColor: `${color}20` }}
+                    >
+                      <Icon size={14} color={color} />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-sm text-gray-200">
+                        <Text className="font-semibold">{event.displayName}</Text>
+                        <Text className="text-gray-400"> {label}</Text>
+                        {event.type === 'cheer' && event.data.bits != null && (
+                          <Text className="text-amber-400"> {String(event.data.bits)} bits</Text>
+                        )}
+                        {event.type === 'raid' && event.data.viewers != null && (
+                          <Text className="text-red-400"> with {String(event.data.viewers)} viewers</Text>
+                        )}
+                      </Text>
+                    </View>
+                    <Text className="text-xs text-gray-600">
+                      {formatRelativeTime(event.timestamp)}
+                    </Text>
+                  </View>
+                )
+              })
+            )}
+          </Card>
+        </View>
       </View>
     </ScrollView>
   )
 }
 
-function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function StatCard({
+  icon,
+  label,
+  value,
+  accent,
+}: {
+  icon: React.ReactNode
+  label: string
+  value: string
+  accent: string
+}) {
   return (
-    <Card className="flex-1 min-w-[140px] p-4 gap-2">
-      {icon}
+    <Card className="flex-1 min-w-[140px] gap-2 py-4">
+      <View className="flex-row items-center gap-2">
+        {icon}
+      </View>
       <Text className="text-2xl font-bold text-gray-100">{value}</Text>
-      <Text className="text-sm text-gray-400">{label}</Text>
+      <Text className="text-xs text-gray-500">{label}</Text>
     </Card>
   )
 }
