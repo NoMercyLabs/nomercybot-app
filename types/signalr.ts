@@ -1,5 +1,7 @@
 import type { Channel } from './channel'
 
+// ── Shared sub-types ──────────────────────────────────────────────────────────
+
 export interface ChatFragment {
   type: 'text' | 'emote' | 'mention' | 'cheermote'
   text: string
@@ -129,28 +131,34 @@ export interface BotStatusPayload {
   message?: string
 }
 
-/**
- * Type-safe map of all SignalR hub events (DashboardHub).
- * Keys = event names sent by the server, Values = payload types.
- */
-export interface SignalREventMap {
-  // Dashboard Hub events
+// ── DashboardHub (/hubs/dashboard) ───────────────────────────────────────────
+// Real-time events sent by the backend DashboardHub to authenticated dashboard clients.
+
+export interface DashboardHubEventMap {
+  // Chat
   ChatMessage: ChatMessagePayload
+  MessageDeleted: { channelId: string; messageId: string; deletedBy?: string }
+  UserBanned: { channelId: string; userId: string; username: string; reason?: string }
+  UserTimedOut: { channelId: string; userId: string; username: string; durationSeconds: number; reason?: string }
+
+  // Channel state
   ChannelEvent: ChannelEventPayload
-  MusicStateChanged: MusicStatePayload
-  ModAction: ModActionPayload
+  ChannelUpdated: Partial<Channel>
+  ChannelWentLive: { channelId: string; startedAt: string }
+  ChannelWentOffline: { channelId: string }
+
+  // Stream
   StreamStatusChanged: StreamStatusPayload
-  AlertTriggered: AlertPayload
-  BotStatus: BotStatusPayload
-  PermissionChanged: {
-    broadcasterId: string
-    action: 'created' | 'updated' | 'deleted'
-    subjectType: 'user' | 'role'
-    subjectId: string
-    resourceType: string
-    resourceId?: string
-    permission: string
-  }
+
+  // Music
+  MusicStateChanged: MusicStatePayload
+  NowPlayingChanged: { channelId: string; track: MusicTrack | null }
+  QueueUpdated: { channelId: string; queueLength: number }
+
+  // Moderation
+  ModAction: ModActionPayload
+
+  // Commands
   CommandExecuted: {
     broadcasterId: string
     commandName: string
@@ -162,6 +170,10 @@ export interface SignalREventMap {
     errorMessage?: string
     timestamp: string
   }
+  CommandUpdated: { id: string; name: string }
+  CommandDeleted: { id: string }
+
+  // Rewards
   RewardRedeemed: {
     broadcasterId: string
     redemptionId: string
@@ -175,27 +187,205 @@ export interface SignalREventMap {
     timestamp: string
   }
 
-  // Legacy / simplified events (kept for backwards compat)
-  ChannelUpdated: Partial<Channel>
-  ChannelWentLive: { channelId: string; startedAt: string }
-  ChannelWentOffline: { channelId: string }
-  CommandUpdated: { id: string; name: string }
-  CommandDeleted: { id: string }
+  // Pipelines
+  PipelineExecuted: {
+    pipelineId: string
+    channelId: string
+    status: 'success' | 'error'
+    duration: number
+    errorMessage?: string
+  }
+
+  // Permissions
+  PermissionChanged: {
+    broadcasterId: string
+    action: 'created' | 'updated' | 'deleted'
+    subjectType: 'user' | 'role'
+    subjectId: string
+    resourceType: string
+    resourceId?: string
+    permission: string
+  }
+
+  // System
+  AlertTriggered: AlertPayload
+  BotStatus: BotStatusPayload
   NewEvent: { id: string; channelId: string; type: string; data: Record<string, unknown>; timestamp: string }
-  NowPlayingChanged: { channelId: string; track: MusicTrack | null }
-  QueueUpdated: { channelId: string; queueLength: number }
-  PipelineExecuted: { pipelineId: string; channelId: string; status: 'success' | 'error'; duration: number }
-  MessageDeleted: { channelId: string; messageId: string; deletedBy?: string }
-  UserBanned: { channelId: string; userId: string; username: string; reason?: string }
-  UserTimedOut: { channelId: string; userId: string; username: string; durationSeconds: number; reason?: string }
 }
 
-export interface SignalRHubMethods {
+/** Methods the client can invoke on DashboardHub */
+export interface DashboardHubMethods {
   JoinChannel: (broadcasterId: string) => Promise<void>
   LeaveChannel: (broadcasterId: string) => Promise<void>
   SendChatMessage: (broadcasterId: string, message: string, replyToMessageId?: string) => Promise<void>
   TriggerAction: (broadcasterId: string, actionName: string, parameters?: Record<string, string>) => Promise<void>
 }
 
-// Additional events added after initial spec
-declare module './signalr' {}
+// ── OverlayHub (/hubs/overlay) ────────────────────────────────────────────────
+// Events sent to browser-source overlay clients (OBS browser sources, stream overlays).
+// No auth required for public overlays — uses channelToken query param instead.
+
+export interface OverlayHubEventMap {
+  /** Alert animation: follow, sub, raid, donation, bits */
+  OverlayAlert: {
+    type: 'follow' | 'subscription' | 'raid' | 'donation' | 'bits' | 'custom'
+    username: string
+    displayName: string
+    message?: string
+    amount?: number
+    /** Alert preset / widget ID to use */
+    widgetId?: string
+    durationMs: number
+    timestamp: string
+  }
+
+  /** Now-playing track changed for music overlay widget */
+  OverlayNowPlaying: {
+    track: MusicTrack | null
+    isPlaying: boolean
+    progressMs: number
+    durationMs: number
+  }
+
+  /** Goal/counter widget updated */
+  OverlayGoalUpdated: {
+    widgetId: string
+    label: string
+    current: number
+    target: number
+    unit?: string
+  }
+
+  /** Leaderboard widget updated */
+  OverlayLeaderboardUpdated: {
+    widgetId: string
+    entries: Array<{ rank: number; username: string; displayName: string; score: number }>
+  }
+
+  /** Chat widget — filtered/styled message for overlay */
+  OverlayChatMessage: ChatMessagePayload
+
+  /** Stream title/category changed */
+  OverlayStreamUpdated: {
+    title: string
+    gameName: string
+    isLive: boolean
+    viewerCount: number
+  }
+
+  /** Custom widget data push */
+  OverlayCustomData: {
+    widgetId: string
+    data: Record<string, unknown>
+  }
+
+  /** Channel points redemption for interactive overlays */
+  OverlayRedemption: {
+    rewardTitle: string
+    username: string
+    userInput?: string
+    timestamp: string
+  }
+}
+
+/** Methods the client can invoke on OverlayHub */
+export interface OverlayHubMethods {
+  /** Join a channel's overlay room by channel token (no auth needed) */
+  JoinOverlay: (channelToken: string) => Promise<void>
+  LeaveOverlay: (channelToken: string) => Promise<void>
+}
+
+// ── OBSRelayHub (/hubs/obs-relay) ─────────────────────────────────────────────
+// Bi-directional relay between the dashboard and the NoMercy OBS plugin.
+// Events flow both ways: server → obs plugin (commands) and obs plugin → server (state).
+
+export interface OBSRelayHubEventMap {
+  /** OBS plugin reports current connection status */
+  OBSConnected: {
+    broadcasterId: string
+    version: string
+    platform: 'windows' | 'mac' | 'linux'
+    obsVersion: string
+  }
+
+  OBSDisconnected: {
+    broadcasterId: string
+    reason?: string
+  }
+
+  /** Current scene list from OBS */
+  OBSScenesUpdated: {
+    broadcasterId: string
+    currentScene: string
+    scenes: Array<{ name: string; sources: string[] }>
+  }
+
+  /** Scene was switched (either by user or bot command) */
+  OBSSceneSwitched: {
+    broadcasterId: string
+    previousScene: string
+    currentScene: string
+    triggeredBy: 'user' | 'automation'
+  }
+
+  /** Source visibility changed */
+  OBSSourceToggled: {
+    broadcasterId: string
+    sceneName: string
+    sourceName: string
+    visible: boolean
+  }
+
+  /** Recording/streaming state changed */
+  OBSStreamingStateChanged: {
+    broadcasterId: string
+    isStreaming: boolean
+    isRecording: boolean
+    timecode?: string
+  }
+
+  /** Stats from OBS (dropped frames, bitrate, etc.) */
+  OBSStats: {
+    broadcasterId: string
+    fps: number
+    cpuUsage: number
+    memoryUsage: number
+    droppedFrames: number
+    totalFrames: number
+    renderSkipped: number
+    outputBitrate: number
+    timestamp: string
+  }
+
+  /** OBS plugin echoes back the result of a command */
+  OBSCommandResult: {
+    commandId: string
+    success: boolean
+    error?: string
+  }
+}
+
+/** Methods the client can invoke on OBSRelayHub */
+export interface OBSRelayHubMethods {
+  /** Switch scene in OBS */
+  SwitchScene: (broadcasterId: string, sceneName: string) => Promise<void>
+  /** Toggle a source's visibility */
+  ToggleSource: (broadcasterId: string, sceneName: string, sourceName: string, visible: boolean) => Promise<void>
+  /** Start/stop recording */
+  SetRecording: (broadcasterId: string, recording: boolean) => Promise<void>
+  /** Play a media source */
+  PlayMedia: (broadcasterId: string, sourceName: string) => Promise<void>
+  /** Send arbitrary OBS WebSocket command via the relay */
+  SendOBSCommand: (broadcasterId: string, requestType: string, requestData?: Record<string, unknown>) => Promise<void>
+  /** Request current OBS stats */
+  RequestStats: (broadcasterId: string) => Promise<void>
+}
+
+// ── useSignalR / DashboardHub alias ──────────────────────────────────────────
+// SignalREventMap is an alias for DashboardHubEventMap for backwards compatibility.
+
+/** @alias DashboardHubEventMap */
+export type SignalREventMap = DashboardHubEventMap
+
+/** @alias DashboardHubMethods */
+export type SignalRHubMethods = DashboardHubMethods

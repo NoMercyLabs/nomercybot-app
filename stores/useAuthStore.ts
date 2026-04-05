@@ -1,7 +1,8 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { appStorage } from '@/lib/storage'
-import { apiClient } from '@/lib/api/client'
+import { apiClient, setAuthToken } from '@/lib/api/client'
+import { setSignalRTokenGetter, destroyAllConnections } from '@/lib/signalr/connection'
 import * as WebBrowser from 'expo-web-browser'
 import { makeRedirectUri } from 'expo-auth-session'
 import type { User } from '@/types/auth'
@@ -19,7 +20,7 @@ interface AuthState {
 
   init: () => Promise<void>
   login: () => Promise<void>
-  logout: () => void
+  logout: () => Promise<void>
   handleCallback: (code: string, state?: string) => Promise<boolean>
   completeOnboarding: () => void
   setAuth: (data: { user: User; accessToken: string; refreshToken: string; expiresIn: number }) => void
@@ -28,7 +29,6 @@ interface AuthState {
 }
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:7000'
-const CLIENT_ID = process.env.EXPO_PUBLIC_TWITCH_CLIENT_ID ?? ''
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -42,11 +42,14 @@ export const useAuthStore = create<AuthState>()(
       onboardingComplete: false,
 
       init: async () => {
-        const { accessToken, expiresAt, refreshToken: refresh } = get() as any
+        const { accessToken, expiresAt } = get()
         if (!accessToken) return
-        // Restore axios header
-        apiClient.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`
-        // Refresh if needed
+
+        // Register token for API calls and SignalR
+        setAuthToken(accessToken)
+        setSignalRTokenGetter(() => useAuthStore.getState().accessToken ?? '')
+
+        // Proactively refresh if expiring within 5 minutes
         if (expiresAt && Date.now() > expiresAt - 5 * 60 * 1000) {
           await get().refreshToken()
         }
@@ -55,9 +58,8 @@ export const useAuthStore = create<AuthState>()(
       login: async () => {
         const redirectUri = makeRedirectUri({ scheme: 'nomercybot', path: 'callback' })
         const authUrl = `${API_URL}/api/auth/twitch?redirect_uri=${encodeURIComponent(redirectUri)}`
-
-        const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri)
-        // The result is handled by the callback screen via deep link
+        await WebBrowser.openAuthSessionAsync(authUrl, redirectUri)
+        // Callback handled by deep link → app/(auth)/callback.tsx
       },
 
       handleCallback: async (code: string, state?: string) => {
@@ -90,7 +92,8 @@ export const useAuthStore = create<AuthState>()(
           expiresAt: Date.now() + expiresIn * 1000,
           isAuthenticated: true,
         })
-        apiClient.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`
+        setAuthToken(accessToken)
+        setSignalRTokenGetter(() => useAuthStore.getState().accessToken ?? '')
       },
 
       refreshToken: async () => {
@@ -110,15 +113,17 @@ export const useAuthStore = create<AuthState>()(
             refreshTokenValue: res.data.refreshToken,
             expiresAt: Date.now() + res.data.expiresIn * 1000,
           })
-          apiClient.defaults.headers.common['Authorization'] = `Bearer ${res.data.accessToken}`
+          setAuthToken(res.data.accessToken)
         } catch {
-          get().logout()
+          await get().logout()
         } finally {
           set({ isLoading: false })
         }
       },
 
-      logout: () => {
+      logout: async () => {
+        setAuthToken(null)
+        await destroyAllConnections()
         set({
           user: null,
           accessToken: null,
@@ -126,7 +131,6 @@ export const useAuthStore = create<AuthState>()(
           expiresAt: null,
           isAuthenticated: false,
         })
-        delete apiClient.defaults.headers.common['Authorization']
       },
 
       setLoading: (loading) => set({ isLoading: loading }),
@@ -134,7 +138,8 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'nomercybot-auth',
       storage: createJSONStorage(() => appStorage),
-      partialState: (state: AuthState) => ({
+      // partialize selects which fields to persist (only data, not actions)
+      partialize: (state) => ({
         user: state.user,
         accessToken: state.accessToken,
         refreshTokenValue: state.refreshTokenValue,
@@ -142,6 +147,6 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: state.isAuthenticated,
         onboardingComplete: state.onboardingComplete,
       }),
-    } as any,
+    },
   ),
 )

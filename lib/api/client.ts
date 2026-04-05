@@ -2,10 +2,18 @@ import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { Platform } from 'react-native'
 import type { ApiError } from './types'
 
+// Module-level token avoids circular dependency with auth store.
+// Auth store calls setAuthToken() after login/refresh/restore.
+let _token: string | null = null
+
+export function setAuthToken(token: string | null): void {
+  _token = token
+}
+
 const baseURL =
   Platform.OS === 'web'
-    ? '/api'
-    : `${process.env.EXPO_PUBLIC_API_URL}/api`
+    ? ''
+    : process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:7000'
 
 export const apiClient = axios.create({
   baseURL,
@@ -16,9 +24,12 @@ export const apiClient = axios.create({
   },
 })
 
-// Request interceptor -- log in dev
+// Request interceptor — inject auth token + dev logging
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    if (_token && !config.headers['Authorization']) {
+      config.headers['Authorization'] = `Bearer ${_token}`
+    }
     if (__DEV__) {
       console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`)
     }
@@ -27,7 +38,8 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error),
 )
 
-// Response interceptor -- normalize errors
+// Response interceptor — normalize errors
+// 401 handling is managed by the auth store's token refresh logic.
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError<ApiError>) => {

@@ -1,13 +1,14 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
-import { HubConnectionState, type HubConnection } from '@microsoft/signalr'
+import { useEffect, useState, useCallback } from 'react'
+import { HubConnectionState } from '@microsoft/signalr'
 import { AppState, Platform } from 'react-native'
 import { useAuthStore } from '@/stores/useAuthStore'
 import {
-  getSignalRConnection,
-  incrementRefCount,
-  decrementRefCount,
-  getRefCount,
-  destroyConnection,
+  getDashboardConnection,
+  incrementDashboardRefCount,
+  decrementDashboardRefCount,
+  getDashboardRefCount,
+  destroyDashboardConnection,
+  setSignalRTokenGetter,
 } from '@/lib/signalr/connection'
 import type { SignalREventMap } from '@/types/signalr'
 import type { ConnectionStatus } from '@/lib/signalr/types'
@@ -22,7 +23,12 @@ function broadcastStatus(status: ConnectionStatus) {
 export function useSignalR() {
   const [status, setStatus] = useState<ConnectionStatus>('disconnected')
   const [error, setError] = useState<string | null>(null)
-  const accessToken = useAuthStore((s) => s.accessToken)
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+
+  // Register the dynamic token getter once (and whenever auth changes)
+  useEffect(() => {
+    setSignalRTokenGetter(() => useAuthStore.getState().accessToken ?? '')
+  }, [isAuthenticated])
 
   useEffect(() => {
     statusListeners.add(setStatus)
@@ -30,10 +36,10 @@ export function useSignalR() {
   }, [])
 
   const connect = useCallback(async () => {
-    if (!accessToken) return
+    if (!useAuthStore.getState().isAuthenticated) return
 
-    const conn = getSignalRConnection(accessToken)
-    incrementRefCount()
+    const conn = getDashboardConnection()
+    incrementDashboardRefCount()
 
     conn.onreconnecting(() => broadcastStatus('reconnecting'))
     conn.onreconnected(() => broadcastStatus('connected'))
@@ -51,12 +57,12 @@ export function useSignalR() {
     } else if (conn.state === HubConnectionState.Connected) {
       broadcastStatus('connected')
     }
-  }, [accessToken])
+  }, [])
 
   const disconnect = useCallback(async () => {
-    decrementRefCount()
-    if (getRefCount() <= 0) {
-      await destroyConnection()
+    decrementDashboardRefCount()
+    if (getDashboardRefCount() <= 0) {
+      await destroyDashboardConnection()
       broadcastStatus('disconnected')
     }
   }, [])
@@ -65,33 +71,31 @@ export function useSignalR() {
     event: K,
     handler: (data: SignalREventMap[K]) => void,
   ) => {
-    if (!accessToken) return
-    const conn = getSignalRConnection(accessToken)
+    const conn = getDashboardConnection()
     conn.on(event as string, handler)
-  }, [accessToken])
+  }, [])
 
   const off = useCallback(<K extends keyof SignalREventMap>(event: K) => {
-    if (!accessToken) return
-    const conn = getSignalRConnection(accessToken)
+    const conn = getDashboardConnection()
     conn.off(event as string)
-  }, [accessToken])
+  }, [])
 
   const invoke = useCallback(async <T>(method: string, ...args: unknown[]): Promise<T> => {
-    if (!accessToken) throw new Error('Not authenticated')
-    const conn = getSignalRConnection(accessToken)
+    if (!useAuthStore.getState().isAuthenticated) throw new Error('Not authenticated')
+    const conn = getDashboardConnection()
     if (conn.state !== HubConnectionState.Connected) {
       throw new Error('SignalR not connected')
     }
     return conn.invoke<T>(method, ...args)
-  }, [accessToken])
+  }, [])
 
-  // Handle app foreground/background on mobile
+  // Re-connect when app comes back to foreground on mobile
   useEffect(() => {
     if (Platform.OS === 'web') return
 
     const subscription = AppState.addEventListener('change', async (nextState) => {
-      if (!accessToken) return
-      const conn = getSignalRConnection(accessToken)
+      if (!useAuthStore.getState().isAuthenticated) return
+      const conn = getDashboardConnection()
 
       if (nextState === 'active' && conn.state === HubConnectionState.Disconnected) {
         broadcastStatus('connecting')
@@ -108,7 +112,7 @@ export function useSignalR() {
     })
 
     return () => subscription.remove()
-  }, [accessToken])
+  }, [])
 
   useEffect(() => {
     return () => { disconnect() }
