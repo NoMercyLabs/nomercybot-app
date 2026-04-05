@@ -1,0 +1,21 @@
+{
+  "title": "Commands",
+  "new_command": "New Command",
+  "edit_command": "Edit Command",
+  "command_name": "Command Name",
+  "response": "Response",
+  "cooldown": "Cooldown",
+  "enabled": "Enabled",
+  "permission": "Permission",
+  "permissions": {
+    "everyone": "Everyone",
+    "subscriber": "Subscriber",
+    "vip": "VIP",
+    "moderator": "Moderator",
+    "broadcaster": "Broadcaster"
+  },
+  "saved": "Command saved",
+  "deleted": "Command deleted",
+  "delete_confirm": "Delete !{{name}}?",
+  "delete_confirm_message": "This action cannot be undone."
+}

@@ -1,0 +1,12 @@
+{
+  "title": "Moderation",
+  "filters": "Filters",
+  "ban_list": "Ban List",
+  "mod_log": "Mod Log",
+  "timeout": "Timeout",
+  "ban": "Ban",
+  "unban": "Unban",
+  "duration": "Duration",
+  "reason": "Reason",
+  "action_taken": "Action taken by {{moderator}}"
+}

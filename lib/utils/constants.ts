@@ -1,0 +1,10 @@
+export const APP_NAME = 'NomercyBot'
+export const DEFAULT_ACCENT_COLOR = '#9147ff'
+export const API_BASE = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:5000'
+export const SIGNALR_HUB_URL = `${API_BASE}/hubs/dashboard`
+export const MAX_CHAT_MESSAGES = 200
+export const TOKEN_REFRESH_INTERVAL = 1000 * 60 * 4
+export const TOKEN_REFRESH_INTERVAL_MS = TOKEN_REFRESH_INTERVAL
+export const STALE_TIME = 1000 * 60 * 5
+export const SIGNALR_RECONNECT_MAX_MS = 120_000
+export const PAGINATION_DEFAULT_PAGE_SIZE = 25

@@ -1,0 +1,13 @@
+{
+  "title": "Settings",
+  "general": "General",
+  "bot_prefix": "Bot Prefix",
+  "language": "Language",
+  "timezone": "Timezone",
+  "tts": "Text to Speech",
+  "tts_voice": "TTS Voice",
+  "danger_zone": "Danger Zone",
+  "reset_bot": "Reset Bot",
+  "delete_account": "Delete Account",
+  "saved": "Settings saved"
+}

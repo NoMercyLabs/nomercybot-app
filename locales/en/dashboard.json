@@ -1,0 +1,16 @@
+{
+  "title": "Dashboard",
+  "welcome": "Welcome back, {{name}}",
+  "stats": {
+    "viewers": "Viewers",
+    "followers": "Followers",
+    "commands_used": "Commands Used",
+    "messages": "Messages"
+  },
+  "activity_feed": "Recent Activity",
+  "quick_actions": "Quick Actions",
+  "bot_status": "Bot Status",
+  "stream_status": "Stream Status",
+  "live": "LIVE",
+  "offline": "Offline"
+}

@@ -1,0 +1,10 @@
+{
+  "title": "Music",
+  "now_playing": "Now Playing",
+  "queue": "Queue",
+  "request_song": "Request Song",
+  "skip": "Skip",
+  "volume": "Volume",
+  "nothing_playing": "Nothing playing",
+  "queue_empty": "Queue is empty"
+}

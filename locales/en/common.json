@@ -1,0 +1,17 @@
+{
+  "app_name": "NomercyBot",
+  "loading": "Loading...",
+  "error": "Something went wrong",
+  "save": "Save",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "edit": "Edit",
+  "create": "Create",
+  "back": "Back",
+  "confirm": "Confirm",
+  "yes": "Yes",
+  "no": "No",
+  "search": "Search...",
+  "empty": "No items found",
+  "retry": "Try again"
+}

@@ -1,0 +1,13 @@
+{
+  "title": "Pipelines",
+  "new_pipeline": "New Pipeline",
+  "edit_pipeline": "Edit Pipeline",
+  "pipeline_name": "Pipeline Name",
+  "enabled": "Enabled",
+  "trigger": "Trigger",
+  "actions": "Actions",
+  "conditions": "Conditions",
+  "test_run": "Test Run",
+  "saved": "Pipeline saved",
+  "deleted": "Pipeline deleted"
+}
