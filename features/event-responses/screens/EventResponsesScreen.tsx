@@ -37,20 +37,25 @@ export function EventResponsesScreen() {
       const fullConfig = await fetchEventResponse(channelId, eventType)
       setModalConfig(fullConfig)
       setModalEventType(eventType)
-    } catch {
-      // If not found (404), open with defaults
-      setModalConfig({
-        id: 0,
-        eventType,
-        isEnabled: true,
-        responseType: 'none',
-        message: null,
-        pipelineJson: null,
-        metadata: {},
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      })
-      setModalEventType(eventType)
+    } catch (error: unknown) {
+      const status = (error as { response?: { status?: number } }).response?.status
+      if (status === 404) {
+        // Not yet configured — open modal with defaults
+        setModalConfig({
+          id: 0,
+          eventType,
+          isEnabled: true,
+          responseType: 'none',
+          message: null,
+          pipelineJson: null,
+          metadata: {},
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        })
+        setModalEventType(eventType)
+      } else {
+        toast.error('Failed to load event response')
+      }
     }
   }
 
@@ -66,9 +71,15 @@ export function EventResponsesScreen() {
 
   async function handleSave(data: UpdateEventResponseRequest) {
     if (!channelId || !modalEventType) return
-    await upsertEventResponse(channelId, modalEventType, data)
-    queryClient.invalidateQueries({ queryKey: ['channel', channelId, 'event-responses'] })
-    toast.success('Event response saved')
+    try {
+      await upsertEventResponse(channelId, modalEventType, data)
+      queryClient.invalidateQueries({ queryKey: ['channel', channelId, 'event-responses'] })
+      toast.success('Event response saved')
+      setModalEventType(null)
+      setModalConfig(null)
+    } catch {
+      toast.error('Failed to save event response')
+    }
   }
 
   return (
@@ -103,15 +114,13 @@ export function EventResponsesScreen() {
           )}
         </ScrollView>
 
-        {modalEventType !== null && (
-          <EventResponseModal
-            visible={modalEventType !== null}
-            eventType={modalEventType}
-            config={modalConfig}
-            onClose={() => { setModalEventType(null); setModalConfig(null) }}
-            onSave={handleSave}
-          />
-        )}
+        <EventResponseModal
+          visible={modalEventType !== null}
+          eventType={modalEventType ?? ''}
+          config={modalConfig}
+          onClose={() => { setModalEventType(null); setModalConfig(null) }}
+          onSave={handleSave}
+        />
       </View>
     </ErrorBoundary>
   )
