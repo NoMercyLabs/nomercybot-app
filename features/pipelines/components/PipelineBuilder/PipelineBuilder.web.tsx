@@ -48,6 +48,7 @@ export function PipelineBuilderWeb({ pipeline, onSave }: PipelineBuilderProps) {
           <PipelineNodeEditor
             node={selectedNode}
             onUpdate={(updates) => updateNode(selectedNode.id, updates)}
+            onDelete={() => { removeNode(selectedNode.id); selectNode(null) }}
             onClose={() => selectNode(null)}
           />
         </View>
