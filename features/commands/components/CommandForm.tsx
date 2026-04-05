@@ -76,7 +76,7 @@ export function CommandForm({ command, pipelines = [], onSubmit, isSubmitting }:
     resolver: zodResolver(schema),
     defaultValues: {
       name: command?.name ?? '',
-      enabled: command?.enabled ?? command?.isEnabled ?? true,
+      enabled: command?.isEnabled ?? true,
       permission: command?.permission ?? 'everyone',
       description: command?.description ?? '',
       cooldown: command?.cooldown ?? command?.cooldownSeconds ?? 5,

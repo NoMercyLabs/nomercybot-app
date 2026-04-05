@@ -38,6 +38,9 @@ export default function CommandEditScreen() {
       addToast('success', `Command !${created.name} created`)
       router.push('/(dashboard)/commands' as any)
     },
+    onError: () => {
+      addToast('error', 'Failed to create command')
+    },
   })
 
   // Update mutation — depends on command?.name once loaded
@@ -48,6 +51,9 @@ export default function CommandEditScreen() {
       invalidateKeys: ['commands', `commands/${name}`],
       onSuccess: () => {
         addToast('success', 'Command saved')
+      },
+      onError: () => {
+        addToast('error', 'Failed to save command')
       },
     },
   )
@@ -61,6 +67,9 @@ export default function CommandEditScreen() {
       onSuccess: () => {
         addToast('success', `Command !${name} deleted`)
         router.push('/(dashboard)/commands' as any)
+      },
+      onError: () => {
+        addToast('error', 'Failed to delete command')
       },
     },
   )

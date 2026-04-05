@@ -16,7 +16,7 @@ export function CommandCard({ command, onEdit, onDelete }: CommandCardProps) {
       <View className="flex-1 gap-1">
         <View className="flex-row items-center gap-2">
           <Text className="text-gray-100 font-medium">!{command.name}</Text>
-          {!command.enabled && <Badge label="Disabled" variant="secondary" />}
+          {!command.isEnabled && <Badge label="Disabled" variant="secondary" />}
           <Badge label={command.permission} variant="default" />
         </View>
         <Text className="text-gray-400 text-sm" numberOfLines={1}>{command.response}</Text>

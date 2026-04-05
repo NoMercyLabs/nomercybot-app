@@ -65,6 +65,7 @@ export function useApiMutation<TData, TVariables>(
     invalidateKeys?: string[]
     successMessage?: string
     onSuccess?: (data: TData) => void
+    onError?: (error: ApiError) => void
   },
 ) {
   const channelId = useChannelStore((s) => s.currentChannel?.id)
@@ -89,7 +90,11 @@ export function useApiMutation<TData, TVariables>(
       options?.onSuccess?.(data)
     },
     onError: (error: ApiError) => {
-      addToast('error', error.message ?? 'An unexpected error occurred')
+      if (options?.onError) {
+        options.onError(error)
+      } else {
+        addToast('error', error.message ?? 'An unexpected error occurred')
+      }
     },
   })
 }

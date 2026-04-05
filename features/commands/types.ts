@@ -8,7 +8,6 @@ export interface Command {
   type?: CommandType
   permission: PermissionLevel
   isEnabled?: boolean
-  enabled?: boolean
   response?: string
   responses?: string[]
   pipeline?: string
