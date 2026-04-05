@@ -1,27 +1,12 @@
-export interface PipelineNode {
-  id: string
-  type: string
-  label: string
-  config: Record<string, any>
-  position?: { x: number; y: number }
-}
+import type { PipelineNode } from '@/types/pipeline'
 
-export interface PipelineConnection {
-  id: string
-  sourceId: string
-  targetId: string
-}
-
-export interface PipelineGraph {
+export interface PipelineBuilderState {
   nodes: PipelineNode[]
-  connections: PipelineConnection[]
+  selectedNodeId: string | null
+  isDirty: boolean
 }
 
-export interface NodeDefinition {
-  type: string
-  label: string
-  category: 'trigger' | 'condition' | 'action'
-  description: string
-  defaultConfig: Record<string, any>
-  configSchema: Record<string, { type: string; label: string; required?: boolean }>
+export interface PipelineBuilderProps {
+  pipeline?: import('@/types/pipeline').Pipeline
+  onSave?: (pipeline: import('@/types/pipeline').Pipeline) => void
 }
