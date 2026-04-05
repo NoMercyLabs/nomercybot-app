@@ -9,8 +9,13 @@ dist/
 .env.staging
 *.log
 .DS_Store
-android/
-ios/
+# android/ and ios/ are tracked — custom dev client requires native source
+android/.gradle/
+android/app/build/
+android/build/
+ios/build/
+ios/Pods/
+ios/DerivedData/
 .claude/
 .claire/
 
