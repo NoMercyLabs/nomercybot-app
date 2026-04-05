@@ -63,7 +63,10 @@ export default function DashboardScreen() {
 
   const { data: stats, isLoading } = useQuery<DashboardStats>({
     queryKey: ['dashboard', 'stats', broadcasterId],
-    queryFn: () => apiClient.get(`/api/dashboard/${broadcasterId}/stats`).then((r) => r.data),
+    queryFn: () =>
+      apiClient
+        .get<{ data: DashboardStats }>(`/api/v1/dashboard/${broadcasterId}/stats`)
+        .then((r) => r.data.data),
     enabled: !!broadcasterId,
     refetchInterval: 30_000,
   })
