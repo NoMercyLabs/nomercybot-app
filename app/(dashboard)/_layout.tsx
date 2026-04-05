@@ -1,9 +1,11 @@
+import { useEffect } from 'react'
 import { Platform } from 'react-native'
 import { Redirect, Tabs, Slot } from 'expo-router'
 import { useAuth } from '@/hooks/useAuth'
 import { useChannel } from '@/hooks/useChannel'
 import { useBreakpoint } from '@/hooks/useBreakpoint'
 import { useRealtimeChannel } from '@/hooks/useRealtimeChannel'
+import { useAppStore } from '@/stores/useAppStore'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { ChannelSwitcher } from '@/components/layout/ChannelSwitcher'
 import { ConnectionStatus } from '@/components/layout/ConnectionStatus'
@@ -20,8 +22,16 @@ export default function DashboardLayout() {
   const { isAuthenticated, isLoading } = useAuth()
   const { currentChannel } = useChannel()
   const { isDesktop, isTablet } = useBreakpoint()
+  const { setSidebarCollapsed } = useAppStore()
 
   useRealtimeChannel()
+
+  // Spec: tablet sidebar starts collapsed on mount
+  useEffect(() => {
+    if (isTablet && !isDesktop) {
+      setSidebarCollapsed(true)
+    }
+  }, [isTablet, isDesktop])
 
   if (isLoading) return null
 
@@ -56,7 +66,7 @@ export default function DashboardLayout() {
           backgroundColor: 'rgb(17, 24, 39)',
           borderTopColor: 'rgb(75, 85, 99)',
         },
-        tabBarActiveTintColor: 'rgb(124, 58, 237)',
+        tabBarActiveTintColor: 'rgb(124, 58, 237)', // accent-500 (--color-accent-500: 124 58 237)
         tabBarInactiveTintColor: 'rgb(136, 137, 160)',
       }}
     >

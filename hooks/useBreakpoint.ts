@@ -37,7 +37,8 @@ export function useBreakpoint() {
     (!isWeb && Device.deviceType === Device.DeviceType.TABLET) ||
     (Platform.OS !== 'web' && width >= BREAKPOINTS.md && width < BREAKPOINTS.lg)
 
-  const isDesktop = isWeb || width > BREAKPOINTS.lg
+  // Use >= so that exactly 1024px is classified as desktop, with no gap at the boundary
+  const isDesktop = isWeb || width >= BREAKPOINTS.lg
 
   const isPhone = !isTablet && !isDesktop
 
