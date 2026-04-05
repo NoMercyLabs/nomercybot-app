@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Toggle } from '@/components/ui/Toggle'
 import { Button } from '@/components/ui/Button'
-import { NODE_REGISTRY } from '../nodes/registry'
+import { NODE_REGISTRY } from './nodeRegistry'
 import type { PipelineNode, ConfigField } from '@/types/pipeline'
 
 interface PipelineNodeEditorProps {
