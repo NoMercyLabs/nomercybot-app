@@ -50,9 +50,6 @@ export function useRealtimeChannel() {
     on('CommandDeleted', () => {
       queryClient.invalidateQueries({ queryKey: ['channel', channelId, 'commands'] })
     })
-    on('NewEvent', () => {
-      queryClient.invalidateQueries({ queryKey: ['channel', channelId, 'events'] })
-    })
     on('NowPlayingChanged', (data) => {
       queryClient.setQueryData(['channel', channelId, 'now-playing'], data.track)
     })
@@ -77,7 +74,6 @@ export function useRealtimeChannel() {
       off('ChannelWentOffline')
       off('CommandUpdated')
       off('CommandDeleted')
-      off('NewEvent')
       off('NowPlayingChanged')
       off('QueueUpdated')
       off('BotStatus')

@@ -162,12 +162,8 @@ export interface DashboardHubEventMap {
   CommandExecuted: {
     broadcasterId: string
     commandName: string
-    userId: string
-    username: string
-    userType: string
-    response?: string
-    success: boolean
-    errorMessage?: string
+    triggeredByUserId: string
+    succeeded: boolean
     timestamp: string
   }
   CommandUpdated: { id: string; name: string }
@@ -181,9 +177,8 @@ export interface DashboardHubEventMap {
     rewardTitle: string
     cost: number
     userId: string
-    username: string
+    userDisplayName: string
     userInput?: string
-    status: 'unfulfilled' | 'fulfilled' | 'canceled'
     timestamp: string
   }
 
