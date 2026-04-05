@@ -1,6 +1,5 @@
-import { View } from 'react-native'
-import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
+import { Animated, View } from 'react-native'
 import { cn } from '@/lib/utils/cn'
 
 interface SkeletonProps {
@@ -9,21 +8,24 @@ interface SkeletonProps {
 }
 
 export function Skeleton({ className, count = 1 }: SkeletonProps) {
-  const opacity = useSharedValue(1)
+  const opacity = useRef(new Animated.Value(0.3)).current
 
   useEffect(() => {
-    opacity.value = withRepeat(withTiming(0.4, { duration: 800 }), -1, true)
-  }, [])
-
-  const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }))
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 0.7, duration: 800, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0.3, duration: 800, useNativeDriver: true }),
+      ]),
+    ).start()
+  }, [opacity])
 
   return (
     <>
       {Array.from({ length: count }).map((_, i) => (
         <Animated.View
           key={i}
-          className={cn('rounded-lg bg-gray-800', className)}
-          style={animStyle}
+          style={{ opacity }}
+          className={cn('rounded-lg bg-surface-overlay', className)}
         />
       ))}
     </>

@@ -7,6 +7,7 @@ interface ThemeState {
   accentOverride: string | null
 
   toggleDark: () => void
+  toggleTheme: () => void
   setAccent: (hex: string | null) => void
   resetAccent: () => void
 }
@@ -18,6 +19,7 @@ export const useThemeStore = create<ThemeState>()(
       accentOverride: null,
 
       toggleDark: () => set((s) => ({ isDark: !s.isDark })),
+      toggleTheme: () => set((s) => ({ isDark: !s.isDark })),
       setAccent: (hex) => set({ accentOverride: hex }),
       resetAccent: () => set({ accentOverride: null }),
     }),

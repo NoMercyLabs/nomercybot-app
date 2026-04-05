@@ -6,14 +6,10 @@ interface SpinnerProps {
   className?: string
 }
 
-export function Spinner({ size = 'small', color = '#a855f7' }: SpinnerProps) {
-  return <ActivityIndicator size={size} color={color} />
-}
-
-export function FullScreenSpinner() {
+export function Spinner({ size = 'large', color = 'rgb(124, 58, 237)' }: SpinnerProps) {
   return (
-    <View className="flex-1 items-center justify-center bg-gray-950">
-      <ActivityIndicator size="large" color="#a855f7" />
+    <View className="flex-1 items-center justify-center">
+      <ActivityIndicator size={size} color={color} />
     </View>
   )
 }

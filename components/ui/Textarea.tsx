@@ -1,0 +1,31 @@
+import { TextInput, View, Text, type TextInputProps } from 'react-native'
+import { cn } from '@/lib/utils/cn'
+
+interface TextareaProps extends TextInputProps {
+  label?: string
+  error?: string
+  rows?: number
+  className?: string
+}
+
+export function Textarea({ label, error, rows = 4, className, ...props }: TextareaProps) {
+  return (
+    <View className="gap-1.5">
+      {label && <Text className="text-sm font-medium text-gray-300">{label}</Text>}
+      <TextInput
+        multiline
+        numberOfLines={rows}
+        textAlignVertical="top"
+        className={cn(
+          'rounded-lg bg-surface-raised border border-border px-4 py-3 text-gray-100',
+          'focus:border-accent-500',
+          error && 'border-red-500',
+          className,
+        )}
+        placeholderTextColor="rgb(107, 114, 128)"
+        {...props}
+      />
+      {error && <Text className="text-xs text-red-400">{error}</Text>}
+    </View>
+  )
+}
