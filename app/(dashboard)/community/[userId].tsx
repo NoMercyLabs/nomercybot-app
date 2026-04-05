@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native'
+import { View, Text, ScrollView, Pressable, ActivityIndicator, TextInput, Modal } from 'react-native'
+import { Image } from 'expo-image'
 import { useLocalSearchParams } from 'expo-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { PageHeader } from '@/components/layout/PageHeader'
@@ -132,7 +133,7 @@ export default function ViewerDetailScreen() {
   if (isLoading) {
     return (
       <View className="flex-1 bg-gray-950">
-        <PageHeader title="Viewer" backHref="/(dashboard)/community" />
+        <PageHeader title="Loading..." backHref="/(dashboard)/community" />
         <ScrollView className="flex-1" contentContainerClassName="py-4">
           <View className="items-center py-6 gap-3">
             <Skeleton className="h-16 w-16 rounded-full" />
@@ -170,10 +171,18 @@ export default function ViewerDetailScreen() {
       <ScrollView className="flex-1" contentContainerClassName="py-4 pb-8">
         {/* Avatar + name */}
         <View className="items-center py-6 gap-3">
-          <View className="h-16 w-16 rounded-full bg-gray-700 items-center justify-center">
-            <Text className="text-xl font-bold text-gray-300">
-              {getInitials(user.displayName || user.username)}
-            </Text>
+          <View className="h-16 w-16 rounded-full bg-gray-700 items-center justify-center overflow-hidden">
+            {user.profileImageUrl ? (
+              <Image
+                source={{ uri: user.profileImageUrl }}
+                contentFit="cover"
+                style={{ width: 64, height: 64, borderRadius: 32 }}
+              />
+            ) : (
+              <Text className="text-xl font-bold text-gray-300">
+                {getInitials(user.displayName || user.username)}
+              </Text>
+            )}
           </View>
           <View className="items-center gap-1">
             <Text className="text-lg font-bold text-gray-100">{user.displayName}</Text>
@@ -297,15 +306,41 @@ export default function ViewerDetailScreen() {
         </View>
       </ScrollView>
 
-      <ConfirmDialog
-        visible={banDialogVisible}
-        title="Ban User"
-        message={`Are you sure you want to ban ${user.displayName || user.username}? This will prevent them from chatting.`}
-        confirmLabel="Ban"
-        variant="danger"
-        onConfirm={() => ban()}
-        onCancel={() => setBanDialogVisible(false)}
-      />
+      {/* Ban dialog — inline Modal to support reason input */}
+      <Modal visible={banDialogVisible} transparent animationType="fade" onRequestClose={() => setBanDialogVisible(false)}>
+        <View className="flex-1 items-center justify-center bg-black/60 p-6">
+          <View className="w-full max-w-sm rounded-2xl bg-surface-raised p-6 gap-4">
+            <View className="gap-2">
+              <Text className="text-lg font-bold text-gray-100">Ban User</Text>
+              <Text className="text-gray-400">
+                Are you sure you want to ban {user.displayName || user.username}? This will prevent them from chatting.
+              </Text>
+            </View>
+            <TextInput
+              value={banReason}
+              onChangeText={setBanReason}
+              placeholder="Reason (optional)"
+              placeholderTextColor="#6b7280"
+              className="bg-gray-800 rounded-xl px-3 py-2.5 text-sm text-white border border-gray-700"
+              autoCapitalize="none"
+            />
+            <View className="flex-row gap-3">
+              <Pressable
+                onPress={() => { setBanDialogVisible(false); setBanReason('') }}
+                className="flex-1 rounded-xl border border-border py-3 items-center"
+              >
+                <Text className="text-gray-300 font-medium">Cancel</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => ban()}
+                className="flex-1 rounded-xl py-3 items-center bg-red-700"
+              >
+                <Text className="text-white font-medium">Ban</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <ConfirmDialog
         visible={unbanDialogVisible}

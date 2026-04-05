@@ -1,5 +1,5 @@
 import { apiClient } from '@/lib/api/client'
-import type { ApiResponse } from '@/lib/api/types'
+import type { ApiResponse, PaginatedResponse } from '@/lib/api/types'
 import type { AutomodConfig, ModerationBan, ModLogEntry } from './types'
 
 export const moderationApi = {
@@ -23,6 +23,6 @@ export const moderationApi = {
 
   getModerationLog: (channelId: string, params?: { page?: number; take?: number }) =>
     apiClient
-      .get<ApiResponse<ModLogEntry[]>>(`/v1/channels/${channelId}/moderation/log`, { params })
+      .get<ApiResponse<PaginatedResponse<ModLogEntry>>>(`/v1/channels/${channelId}/moderation/log`, { params })
       .then((r) => r.data.data),
 }

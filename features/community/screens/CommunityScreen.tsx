@@ -7,6 +7,7 @@ import {
   Pressable,
   RefreshControl,
 } from 'react-native'
+import { Image } from 'expo-image'
 import { router } from 'expo-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Users, Ban } from 'lucide-react-native'
@@ -54,9 +55,17 @@ function UserRow({ user, onPress }: UserRowProps) {
     >
       {/* Avatar */}
       <View className="h-10 w-10 rounded-full bg-gray-700 items-center justify-center overflow-hidden">
-        <Text className="text-sm font-bold text-gray-300">
-          {getInitials(user.displayName || user.username)}
-        </Text>
+        {user.profileImageUrl ? (
+          <Image
+            source={{ uri: user.profileImageUrl }}
+            contentFit="cover"
+            style={{ width: 40, height: 40, borderRadius: 20 }}
+          />
+        ) : (
+          <Text className="text-sm font-bold text-gray-300">
+            {getInitials(user.displayName || user.username)}
+          </Text>
+        )}
       </View>
 
       {/* Info */}

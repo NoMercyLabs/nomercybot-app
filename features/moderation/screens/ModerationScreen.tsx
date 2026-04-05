@@ -5,7 +5,7 @@ import {
   RefreshControl,
   Pressable,
 } from 'react-native'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
@@ -494,20 +494,44 @@ const ACTION_CONFIG: Record<ModLogAction, ActionCfg> = {
 
 function ModLogTab() {
   const channelId = useChannelStore((s) => s.currentChannel?.id)
+  const [page, setPage] = useState(1)
+  const [entries, setEntries] = useState<ModLogEntry[]>([])
+  const [hasMore, setHasMore] = useState(false)
 
-  const { data: entries = [], isLoading, refetch } = useQuery<ModLogEntry[]>({
-    queryKey: ['channel', channelId, 'moderation-log'],
-    queryFn: () => moderationApi.getModerationLog(channelId!, { page: 1, take: 50 }),
+  const { data: pageResult, isLoading, isFetching, refetch } = useQuery({
+    queryKey: ['channel', channelId, 'moderation-log', page],
+    queryFn: () => moderationApi.getModerationLog(channelId!, { page, take: 50 }),
     enabled: !!channelId,
   })
+
+  useEffect(() => {
+    if (!pageResult) return
+    if (page === 1) {
+      setEntries(pageResult.data)
+    } else {
+      setEntries((prev) => [...prev, ...pageResult.data])
+    }
+    setHasMore(pageResult.page < pageResult.totalPages)
+  }, [pageResult, page])
+
+  function handleRefresh() {
+    setPage(1)
+    setEntries([])
+    setHasMore(false)
+    refetch()
+  }
+
+  function handleLoadMore() {
+    setPage((p) => p + 1)
+  }
 
   return (
     <ScrollView
       className="flex-1"
       contentContainerClassName="p-4 gap-3"
-      refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} />}
+      refreshControl={<RefreshControl refreshing={isLoading && page === 1} onRefresh={handleRefresh} tintColor="#a855f7" />}
     >
-      {isLoading ? (
+      {isLoading && page === 1 ? (
         <View className="gap-3">
           <Skeleton className="h-16" />
           <Skeleton className="h-16" />
@@ -523,45 +547,56 @@ function ModLogTab() {
           message="Moderation actions will appear here."
         />
       ) : (
-        entries.map((entry) => {
-          const cfg = ACTION_CONFIG[entry.action] ?? ACTION_CONFIG.ban
-          const { Icon } = cfg
-          return (
-            <Card key={entry.id} className="p-3">
-              <View className="flex-row items-center gap-3">
-                <View
-                  className="h-8 w-8 items-center justify-center rounded-lg"
-                  style={{ backgroundColor: cfg.bgColor }}
-                >
-                  <Icon size={15} color={cfg.color} />
-                </View>
-                <View className="flex-1 gap-0.5">
-                  <View className="flex-row items-center gap-2 flex-wrap">
-                    <Text style={{ color: cfg.color }} className="text-xs font-bold uppercase">
-                      {cfg.label}
-                    </Text>
-                    <Text className="text-sm font-semibold text-gray-200">{entry.target}</Text>
-                    <Text className="text-xs text-gray-500">by {entry.moderator}</Text>
+        <>
+          {entries.map((entry) => {
+            const cfg = ACTION_CONFIG[entry.action] ?? ACTION_CONFIG.ban
+            const { Icon } = cfg
+            return (
+              <Card key={entry.id} className="p-3">
+                <View className="flex-row items-center gap-3">
+                  <View
+                    className="h-8 w-8 items-center justify-center rounded-lg"
+                    style={{ backgroundColor: cfg.bgColor }}
+                  >
+                    <Icon size={15} color={cfg.color} />
                   </View>
-                  {entry.reason ? (
-                    <Text className="text-xs text-gray-400" numberOfLines={1}>
-                      {entry.reason}
-                    </Text>
-                  ) : null}
-                  {entry.duration != null ? (
-                    <Text className="text-xs text-gray-500">{entry.duration}s timeout</Text>
-                  ) : null}
+                  <View className="flex-1 gap-0.5">
+                    <View className="flex-row items-center gap-2 flex-wrap">
+                      <Text style={{ color: cfg.color }} className="text-xs font-bold uppercase">
+                        {cfg.label}
+                      </Text>
+                      <Text className="text-sm font-semibold text-gray-200">{entry.target}</Text>
+                      <Text className="text-xs text-gray-500">by {entry.moderator}</Text>
+                    </View>
+                    {entry.reason ? (
+                      <Text className="text-xs text-gray-400" numberOfLines={1}>
+                        {entry.reason}
+                      </Text>
+                    ) : null}
+                    {entry.duration != null ? (
+                      <Text className="text-xs text-gray-500">{entry.duration}s timeout</Text>
+                    ) : null}
+                  </View>
+                  <Text className="text-xs text-gray-600">
+                    {new Date(entry.timestamp).toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </Text>
                 </View>
-                <Text className="text-xs text-gray-600">
-                  {new Date(entry.timestamp).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </Text>
-              </View>
-            </Card>
-          )
-        })
+              </Card>
+            )
+          })}
+          {hasMore && (
+            <Button
+              label={isFetching ? 'Loading...' : 'Load more'}
+              variant="secondary"
+              loading={isFetching && page > 1}
+              onPress={handleLoadMore}
+              className="mt-2"
+            />
+          )}
+        </>
       )}
     </ScrollView>
   )
