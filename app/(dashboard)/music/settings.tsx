@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ScrollView, View, Text, ActivityIndicator } from 'react-native'
+import { ScrollView, View, Text } from 'react-native'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useChannelStore } from '@/stores/useChannelStore'
 import { PageHeader } from '@/components/layout/PageHeader'

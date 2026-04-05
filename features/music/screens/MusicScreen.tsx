@@ -6,7 +6,6 @@ import {
   Pressable,
   TextInput,
   RefreshControl,
-  ActivityIndicator,
 } from 'react-native'
 import { Image } from 'expo-image'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -185,8 +184,9 @@ function NowPlayingCard({
 function QueueTab({ channelId }: { channelId: string }) {
   const qc = useQueryClient()
   const [query, setQuery] = useState('')
+  const [removingPositions, setRemovingPositions] = useState<Set<number>>(new Set())
 
-  const { data: queue, isLoading, refetch, isRefetching } = useQuery<QueueItem[]>({
+  const { data: queue, isLoading, isError, refetch, isRefetching } = useQuery<QueueItem[]>({
     queryKey: ['music', 'queue', channelId],
     queryFn: () => getQueue(channelId),
     enabled: !!channelId,
@@ -201,8 +201,25 @@ function QueueTab({ channelId }: { channelId: string }) {
   })
 
   const removeMutation = useMutation({
-    mutationFn: (position: number) => removeFromQueue(channelId, position),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['music', 'queue', channelId] }),
+    mutationFn: (position: number) => {
+      setRemovingPositions((prev) => new Set(prev).add(position))
+      return removeFromQueue(channelId, position)
+    },
+    onSuccess: (_data, position) => {
+      setRemovingPositions((prev) => {
+        const next = new Set(prev)
+        next.delete(position)
+        return next
+      })
+      qc.invalidateQueries({ queryKey: ['music', 'queue', channelId] })
+    },
+    onError: (_err, position) => {
+      setRemovingPositions((prev) => {
+        const next = new Set(prev)
+        next.delete(position)
+        return next
+      })
+    },
   })
 
   const handleAdd = useCallback(() => {
@@ -236,7 +253,7 @@ function QueueTab({ channelId }: { channelId: string }) {
       <Pressable
         onPress={() => removeMutation.mutate(item.position)}
         className="p-1.5"
-        disabled={removeMutation.isPending}
+        disabled={removingPositions.has(item.position)}
       >
         <X size={16} color="#6b7280" />
       </Pressable>
@@ -270,6 +287,12 @@ function QueueTab({ channelId }: { channelId: string }) {
             <Skeleton key={i} className="h-14 rounded-lg" />
           ))}
         </View>
+      ) : isError ? (
+        <EmptyState
+          icon={<Music2 size={48} color="#f87171" />}
+          title="Failed to load queue"
+          message="Pull down to retry"
+        />
       ) : (
         <FlatList
           data={queue ?? []}
@@ -297,7 +320,7 @@ function QueueTab({ channelId }: { channelId: string }) {
 // ---------------------------------------------------------------------------
 
 function HistoryTab({ channelId }: { channelId: string }) {
-  const { data: history, isLoading, refetch, isRefetching } = useQuery<HistoryItem[]>({
+  const { data: history, isLoading, isError, refetch, isRefetching } = useQuery<HistoryItem[]>({
     queryKey: ['music', 'history', channelId],
     queryFn: () => getHistory(channelId),
     enabled: !!channelId,
@@ -341,10 +364,20 @@ function HistoryTab({ channelId }: { channelId: string }) {
     )
   }
 
+  if (isError) {
+    return (
+      <EmptyState
+        icon={<Music2 size={48} color="#f87171" />}
+        title="Failed to load history"
+        message="Pull down to retry"
+      />
+    )
+  }
+
   return (
     <FlatList
       data={history ?? []}
-      keyExtractor={(item, index) => `${item.trackName}-${index}`}
+      keyExtractor={(item) => `${item.trackName}-${item.playedAt}`}
       renderItem={renderItem}
       contentContainerStyle={{ paddingHorizontal: 16 }}
       refreshControl={
