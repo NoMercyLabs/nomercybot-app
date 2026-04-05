@@ -115,7 +115,7 @@ export function RewardDetailScreen() {
 
   return (
     <ErrorBoundary>
-    <ScrollView className="flex-1 bg-gray-950" contentContainerClassName="pb-8">
+    <ScrollView className="flex-1" style={{ backgroundColor: '#141125' }} contentContainerStyle={{ paddingBottom: 32 }}>
       <PageHeader title="Edit Reward" showBack />
 
       <View className="px-4 pt-4 gap-4">
@@ -207,7 +207,7 @@ export function RewardDetailScreen() {
           </>
         ) : (
           <View className="py-8 items-center">
-            <Text className="text-gray-500">Reward not found.</Text>
+            <Text style={{ color: '#5a5280' }}>Reward not found.</Text>
           </View>
         )}
       </View>

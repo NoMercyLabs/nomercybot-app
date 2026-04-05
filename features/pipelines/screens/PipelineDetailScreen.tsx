@@ -36,7 +36,7 @@ export function PipelineDetailScreen() {
 
   return (
     <ErrorBoundary>
-      <View className="flex-1 bg-gray-950">
+      <View style={{ flex: 1, backgroundColor: '#141125' }}>
         <View className="px-4 pt-4">
           <PageHeader
             title={isNew ? 'New Pipeline' : (data?.name ?? 'Pipeline')}

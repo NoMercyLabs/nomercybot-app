@@ -1,8 +1,8 @@
-import { ScrollView, View, Text } from 'react-native'
+import { ScrollView, View, Text, RefreshControl } from 'react-native'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { useApiQuery } from '@/hooks/useApi'
-import { Card } from '@/components/ui/Card'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { ErrorBoundary } from '@/components/feedback/ErrorBoundary'
 
 interface LeaderboardEntry {
   rank: number
@@ -12,22 +12,39 @@ interface LeaderboardEntry {
 }
 
 export default function LeaderboardScreen() {
-  const { data: entries, isLoading } = useApiQuery<LeaderboardEntry[]>('leaderboard', '/rewards/leaderboard')
+  const { data: entries, isLoading, isRefetching, refetch } = useApiQuery<LeaderboardEntry[]>('leaderboard', '/rewards/leaderboard')
 
   return (
-    <ScrollView className="flex-1 bg-surface">
-      <PageHeader title="Leaderboard" backHref="/(dashboard)/rewards" />
-      <View className="px-6 py-4 gap-3">
-        {isLoading
-          ? Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} className="h-14 rounded-xl" />)
-          : entries?.map((e) => (
-              <Card key={e.userId} className="flex-row items-center gap-4 p-4">
-                <Text className="text-2xl font-bold text-gray-500 w-8">#{e.rank}</Text>
-                <Text className="flex-1 text-gray-100 font-medium">{e.displayName}</Text>
-                <Text className="text-accent-400 font-semibold">{e.points.toLocaleString()}</Text>
-              </Card>
-            ))}
-      </View>
-    </ScrollView>
+    <ErrorBoundary>
+      <ScrollView
+        style={{ flex: 1, backgroundColor: '#141125' }}
+        contentContainerStyle={{ paddingBottom: 32 }}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
+      >
+        <PageHeader title="Leaderboard" backHref="/(dashboard)/rewards" />
+        <View className="px-5 py-4 gap-3">
+          {isLoading
+            ? Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} className="h-14 rounded-xl" />)
+            : entries?.map((e) => (
+                <View
+                  key={e.userId}
+                  className="flex-row items-center gap-4 rounded-xl px-4 py-3"
+                  style={{ backgroundColor: '#1A1530', borderWidth: 1, borderColor: '#1e1a35' }}
+                >
+                  <Text
+                    className="text-2xl font-bold w-8"
+                    style={{ color: e.rank <= 3 ? '#a78bfa' : '#3d3566' }}
+                  >
+                    #{e.rank}
+                  </Text>
+                  <Text className="flex-1 font-medium text-white">{e.displayName}</Text>
+                  <Text className="font-semibold" style={{ color: '#a78bfa' }}>
+                    {e.points.toLocaleString()}
+                  </Text>
+                </View>
+              ))}
+        </View>
+      </ScrollView>
+    </ErrorBoundary>
   )
 }

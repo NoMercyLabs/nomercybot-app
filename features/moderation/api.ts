@@ -23,6 +23,16 @@ export const moderationApi = {
 
   getModerationLog: (channelId: string, params?: { page?: number; take?: number }) =>
     apiClient
-      .get<ApiResponse<PaginatedResponse<ModLogEntry>>>(`/v1/channels/${channelId}/moderation/log`, { params })
+      .get<PaginatedResponse<ModLogEntry>>(`/v1/channels/${channelId}/moderation/log`, { params })
+      .then((r) => r.data),
+
+  getShieldMode: (channelId: string) =>
+    apiClient
+      .get<ApiResponse<{ enabled: boolean }>>(`/v1/channels/${channelId}/moderation/shield`)
+      .then((r) => r.data.data),
+
+  setShieldMode: (channelId: string, enabled: boolean) =>
+    apiClient
+      .patch<ApiResponse<{ enabled: boolean }>>(`/v1/channels/${channelId}/moderation/shield`, { enabled })
       .then((r) => r.data.data),
 }

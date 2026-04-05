@@ -20,8 +20,8 @@ export function Avatar({ src, name, size = 'md', className }: AvatarProps) {
 
   return (
     <View
-      className={cn('items-center justify-center rounded-full bg-accent-700 overflow-hidden', className)}
-      style={{ width: px, height: px }}
+      className={cn('items-center justify-center rounded-full overflow-hidden', className)}
+      style={{ width: px, height: px, backgroundColor: '#6D28D9' }}
     >
       {src ? (
         <Image source={{ uri: src }} style={{ width: px, height: px }} contentFit="cover" />

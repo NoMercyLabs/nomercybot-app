@@ -1,19 +1,34 @@
 import { apiClient } from '@/lib/api/client'
-import type { Timer, TimerCreate, TimerUpdate } from './types'
+import type { Timer, TimerListItem, TimerCreate, TimerUpdate } from './types'
+
+const base = (channelId: string) => `/api/v1/channels/${channelId}/timers`
 
 export const timersApi = {
-  list: (broadcasterId: string) =>
-    apiClient.get<Timer[]>(`/api/${broadcasterId}/timers`).then((r) => r.data),
+  list: (channelId: string) =>
+    apiClient
+      .get<{ data: TimerListItem[] }>(base(channelId))
+      .then((r) => r.data.data),
 
-  get: (broadcasterId: string, id: string) =>
-    apiClient.get<Timer>(`/api/${broadcasterId}/timers/${id}`).then((r) => r.data),
+  get: (channelId: string, id: number) =>
+    apiClient
+      .get<{ data: Timer }>(`${base(channelId)}/${id}`)
+      .then((r) => r.data.data),
 
-  create: (broadcasterId: string, data: TimerCreate) =>
-    apiClient.post<Timer>(`/api/${broadcasterId}/timers`, data).then((r) => r.data),
+  create: (channelId: string, data: TimerCreate) =>
+    apiClient
+      .post<{ data: Timer }>(base(channelId), data)
+      .then((r) => r.data.data),
 
-  update: (broadcasterId: string, id: string, data: TimerUpdate) =>
-    apiClient.patch<Timer>(`/api/${broadcasterId}/timers/${id}`, data).then((r) => r.data),
+  update: (channelId: string, id: number, data: TimerUpdate) =>
+    apiClient
+      .put<{ data: Timer }>(`${base(channelId)}/${id}`, data)
+      .then((r) => r.data.data),
 
-  delete: (broadcasterId: string, id: string) =>
-    apiClient.delete(`/api/${broadcasterId}/timers/${id}`),
+  delete: (channelId: string, id: number) =>
+    apiClient.delete(`${base(channelId)}/${id}`),
+
+  toggle: (channelId: string, id: number) =>
+    apiClient
+      .post<{ data: Timer }>(`${base(channelId)}/${id}/toggle`)
+      .then((r) => r.data.data),
 }

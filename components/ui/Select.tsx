@@ -23,15 +23,17 @@ export function Select({ label, value, onValueChange, options, placeholder, erro
 
   return (
     <View className="gap-1.5">
-      {label && <Text className="text-sm font-medium text-gray-300">{label}</Text>}
+      {label && <Text className="text-sm font-medium" style={{ color: '#d1d5db' }}>{label}</Text>}
       <Pressable
         onPress={() => setOpen(true)}
-        className={cn(
-          'flex-row items-center justify-between rounded-lg border bg-gray-800 px-3 py-2.5',
-          error ? 'border-red-500' : 'border-gray-700',
-        )}
+        className="flex-row items-center justify-between rounded-lg px-3 py-2.5"
+        style={{
+          backgroundColor: '#1A1530',
+          borderWidth: 1,
+          borderColor: error ? '#ef4444' : '#1e1a35',
+        }}
       >
-        <Text className={cn('text-sm', selected ? 'text-white' : 'text-gray-500')}>
+        <Text className="text-sm" style={{ color: selected ? '#f4f5fa' : '#5a5280' }}>
           {selected?.label ?? placeholder ?? 'Select...'}
         </Text>
         <ChevronDown size={16} color="#6b7280" />
@@ -40,17 +42,21 @@ export function Select({ label, value, onValueChange, options, placeholder, erro
 
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable className="flex-1 bg-black/60" onPress={() => setOpen(false)}>
-          <View className="mx-4 mt-40 rounded-xl bg-gray-900 border border-gray-800 overflow-hidden">
+          <View
+            className="mx-4 mt-40 rounded-xl overflow-hidden"
+            style={{ backgroundColor: '#1A1530', borderWidth: 1, borderColor: '#1e1a35' }}
+          >
             <FlatList
               data={options}
               keyExtractor={(item) => item.value}
               renderItem={({ item }) => (
                 <Pressable
-                  className="flex-row items-center justify-between px-4 py-3.5 active:bg-gray-800"
+                  className="flex-row items-center justify-between px-4 py-3.5"
+                  style={{ borderBottomWidth: 1, borderBottomColor: '#1e1a35' }}
                   onPress={() => { onValueChange(item.value); setOpen(false) }}
                 >
                   <Text className="text-sm text-white">{item.label}</Text>
-                  {item.value === value && <Check size={16} color="#a855f7" />}
+                  {item.value === value && <Check size={16} color="#a78bfa" />}
                 </Pressable>
               )}
             />

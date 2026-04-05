@@ -84,7 +84,7 @@ export function EventResponsesScreen() {
 
   return (
     <ErrorBoundary>
-      <View className="flex-1 bg-gray-950">
+      <View className="flex-1" style={{ backgroundColor: '#141125' }}>
         <PageHeader
           title="Event Responses"
           subtitle={`${enabledCount} active`}
@@ -92,7 +92,7 @@ export function EventResponsesScreen() {
 
         <ScrollView
           className="flex-1"
-          contentContainerClassName="px-4 py-4 gap-3"
+          contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 16, gap: 12 }}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
         >
           {isLoading ? (

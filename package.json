@@ -4,7 +4,7 @@
   "main": "expo-router/entry",
   "scripts": {
     "postinstall": "node scripts/postinstall.js",
-    "start": "expo start",
+    "start": "expo start --host lan",
     "web": "expo start --web",
     "ios": "expo run:ios",
     "android": "expo run:android",

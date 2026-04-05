@@ -6,7 +6,6 @@ import { Avatar } from '@/components/ui/Avatar'
 import { Badge } from '@/components/ui/Badge'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { ChevronDown, X, Check } from 'lucide-react-native'
-import { cn } from '@/lib/utils/cn'
 import type { Channel } from '@/types/channel'
 
 function ChannelRow({
@@ -21,10 +20,8 @@ function ChannelRow({
   return (
     <Pressable
       onPress={onSelect}
-      className={cn(
-        'flex-row items-center gap-3 px-4 py-3 active:bg-surface-overlay',
-        isSelected && 'bg-accent-900/50',
-      )}
+      className="flex-row items-center gap-3 px-4 py-3"
+      style={isSelected ? { backgroundColor: 'rgba(124,58,237,0.15)' } : undefined}
     >
       <Avatar
         src={channel.profileImageUrl}
@@ -33,14 +30,14 @@ function ChannelRow({
       />
       <View className="flex-1 gap-0.5">
         <View className="flex-row items-center gap-2">
-          <Text className="text-sm font-semibold text-gray-200">{channel.displayName}</Text>
+          <Text className="text-sm font-semibold" style={{ color: '#e5e7eb' }}>{channel.displayName}</Text>
           {channel.isLive && (
             <View className="h-1.5 w-1.5 rounded-full bg-red-500" />
           )}
         </View>
-        <Text className="text-xs text-gray-500">@{channel.login}</Text>
+        <Text className="text-xs" style={{ color: '#6b7280' }}>@{channel.login}</Text>
         {channel.isLive && channel.gameName && (
-          <Text className="text-xs text-gray-600">{channel.gameName}</Text>
+          <Text className="text-xs" style={{ color: '#5a5280' }}>{channel.gameName}</Text>
         )}
       </View>
       <View className="items-end gap-1">
@@ -50,7 +47,7 @@ function ChannelRow({
         {!channel.botEnabled && (
           <Badge variant="muted" label="Bot Off" />
         )}
-        {isSelected && <Check size={16} color="rgb(167, 139, 250)" />}
+        {isSelected && <Check size={16} color="#a78bfa" />}
       </View>
     </Pressable>
   )
@@ -78,7 +75,7 @@ export function ChannelSwitcher() {
     <>
       <Pressable
         onPress={() => setOpen(true)}
-        className="flex-row items-center gap-2 rounded-lg px-3 py-1.5 active:bg-surface-overlay"
+        className="flex-row items-center gap-2 rounded-lg px-3 py-1.5"
       >
         <Avatar
           src={currentChannel?.profileImageUrl}
@@ -86,7 +83,7 @@ export function ChannelSwitcher() {
           size="sm"
         />
         <View className="gap-0.5">
-          <Text className="text-sm font-semibold text-gray-200">
+          <Text className="text-sm font-semibold" style={{ color: '#e5e7eb' }}>
             {currentChannel?.displayName ?? 'Select channel'}
           </Text>
           {currentChannel?.isLive && (
@@ -98,7 +95,7 @@ export function ChannelSwitcher() {
             </View>
           )}
         </View>
-        <ChevronDown size={14} color="rgb(156, 163, 175)" />
+        <ChevronDown size={14} color="#9ca3af" />
       </Pressable>
 
       <Modal
@@ -111,10 +108,20 @@ export function ChannelSwitcher() {
           className="flex-1 bg-black/60"
           onPress={() => setOpen(false)}
         >
-          <View className="absolute left-4 top-16 w-72 rounded-xl border border-border bg-gray-900 shadow-xl overflow-hidden">
+          <View
+            className="absolute left-4 top-16 w-72 rounded-xl overflow-hidden"
+            style={{
+              backgroundColor: '#1A1530',
+              borderWidth: 1,
+              borderColor: '#1e1a35',
+            }}
+          >
             {/* Header */}
-            <View className="flex-row items-center justify-between border-b border-border px-4 py-3">
-              <Text className="text-sm font-semibold text-gray-100">Switch Channel</Text>
+            <View
+              className="flex-row items-center justify-between px-4 py-3"
+              style={{ borderBottomWidth: 1, borderBottomColor: '#1e1a35' }}
+            >
+              <Text className="text-sm font-semibold" style={{ color: '#f4f5fa' }}>Switch Channel</Text>
               <Pressable onPress={() => setOpen(false)} className="p-1">
                 <X size={16} color="#8889a0" />
               </Pressable>
@@ -129,7 +136,7 @@ export function ChannelSwitcher() {
               </View>
             ) : channels.length === 0 ? (
               <View className="items-center py-8">
-                <Text className="text-sm text-gray-500">No channels found</Text>
+                <Text className="text-sm" style={{ color: '#6b7280' }}>No channels found</Text>
               </View>
             ) : (
               <FlatList
@@ -144,7 +151,7 @@ export function ChannelSwitcher() {
                   />
                 )}
                 ItemSeparatorComponent={() => (
-                  <View className="h-px bg-border mx-4" />
+                  <View style={{ height: 1, backgroundColor: '#1e1a35', marginHorizontal: 16 }} />
                 )}
               />
             )}

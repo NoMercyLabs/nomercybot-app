@@ -1,61 +1,54 @@
 import { apiClient } from '@/lib/api/client'
-import type { NowPlaying, QueueItem, HistoryItem, MusicSettings } from './types'
+import type { NowPlaying, QueueItem, MusicConfig } from './types'
 
-export async function getNowPlaying(channelId: string): Promise<NowPlaying> {
-  const res = await apiClient.get<{ data: NowPlaying }>(
+export async function getNowPlaying(channelId: string): Promise<NowPlaying | null> {
+  const res = await apiClient.get<{ data: NowPlaying | null }>(
     `/v1/channels/${channelId}/music/now-playing`,
   )
   return res.data.data
 }
 
 export async function getQueue(channelId: string): Promise<QueueItem[]> {
-  const res = await apiClient.get<{ data: QueueItem[] }>(
+  const res = await apiClient.get<{ data: { nowPlaying: NowPlaying | null; queue: QueueItem[] } }>(
     `/v1/channels/${channelId}/music/queue`,
   )
-  return res.data.data
+  return res.data.data.queue
 }
 
-export async function getHistory(channelId: string): Promise<HistoryItem[]> {
-  const res = await apiClient.get<{ data: HistoryItem[] }>(
-    `/v1/channels/${channelId}/music/history`,
-  )
-  return res.data.data
+export async function skipTrack(channelId: string): Promise<void> {
+  await apiClient.post(`/v1/channels/${channelId}/music/skip`)
 }
 
-export async function controlPlayback(
-  channelId: string,
-  action: 'play' | 'pause' | 'skip' | 'previous' | 'volume',
-  value?: number,
-): Promise<void> {
-  await apiClient.post(`/v1/channels/${channelId}/music/control`, { action, value })
+export async function pauseTrack(channelId: string): Promise<void> {
+  await apiClient.post(`/v1/channels/${channelId}/music/pause`)
 }
 
-export async function addToQueue(channelId: string, query: string): Promise<QueueItem> {
-  const res = await apiClient.post<{ data: QueueItem }>(
-    `/v1/channels/${channelId}/music/queue`,
-    { query },
-  )
-  return res.data.data
+export async function resumeTrack(channelId: string): Promise<void> {
+  await apiClient.post(`/v1/channels/${channelId}/music/resume`)
+}
+
+export async function addToQueue(channelId: string, query: string): Promise<void> {
+  await apiClient.post(`/v1/channels/${channelId}/music/queue`, { query })
 }
 
 export async function removeFromQueue(channelId: string, position: number): Promise<void> {
   await apiClient.delete(`/v1/channels/${channelId}/music/queue/${position}`)
 }
 
-export async function getMusicSettings(channelId: string): Promise<MusicSettings> {
-  const res = await apiClient.get<{ data: MusicSettings }>(
-    `/v1/channels/${channelId}/music/settings`,
+export async function getMusicConfig(channelId: string): Promise<MusicConfig> {
+  const res = await apiClient.get<{ data: MusicConfig }>(
+    `/v1/channels/${channelId}/music/config`,
   )
   return res.data.data
 }
 
-export async function saveMusicSettings(
+export async function updateMusicConfig(
   channelId: string,
-  settings: Partial<MusicSettings>,
-): Promise<MusicSettings> {
-  const res = await apiClient.patch<{ data: MusicSettings }>(
-    `/v1/channels/${channelId}/music/settings`,
-    settings,
+  config: Partial<MusicConfig>,
+): Promise<MusicConfig> {
+  const res = await apiClient.put<{ data: MusicConfig }>(
+    `/v1/channels/${channelId}/music/config`,
+    config,
   )
   return res.data.data
 }

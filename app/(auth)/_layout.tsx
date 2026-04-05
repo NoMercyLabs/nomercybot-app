@@ -3,7 +3,7 @@ import { View } from 'react-native'
 
 export default function AuthLayout() {
   return (
-    <View className="flex-1 items-center justify-center bg-surface">
+    <View className="flex-1" style={{ backgroundColor: '#141125' }}>
       <Stack
         screenOptions={{
           headerShown: false,

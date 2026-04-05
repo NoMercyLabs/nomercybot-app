@@ -11,13 +11,13 @@ import { useTimers } from '../hooks/useTimers'
 import { useToast } from '@/hooks/useToast'
 
 export function TimersScreen() {
-  const { timers, isLoading, isRefetching, refetch, updateTimer, deleteTimer } = useTimers()
+  const { timers, isLoading, isRefetching, refetch, toggleTimer } = useTimers()
   const toast = useToast()
   const activeCount = timers.filter((t) => t.isEnabled).length
 
-  async function handleToggle(id: string, enabled: boolean) {
+  async function handleToggle(id: number) {
     try {
-      await updateTimer(id, { isEnabled: enabled })
+      await toggleTimer(id)
     } catch {
       toast.error('Failed to update timer')
     }
@@ -25,7 +25,7 @@ export function TimersScreen() {
 
   return (
     <ErrorBoundary>
-    <View className="flex-1 bg-gray-950">
+    <View className="flex-1" style={{ backgroundColor: '#141125' }}>
       <PageHeader
         title="Timers"
         subtitle={`${activeCount} active`}
@@ -41,7 +41,7 @@ export function TimersScreen() {
 
       <ScrollView
         className="flex-1"
-        contentContainerClassName="px-4 py-4 gap-3"
+        contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 16, gap: 12 }}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
       >
         {isLoading ? (
@@ -63,7 +63,7 @@ export function TimersScreen() {
               key={timer.id}
               timer={timer}
               onPress={() => router.push(`/(dashboard)/timers/${timer.id}` as any)}
-              onToggle={(enabled) => handleToggle(timer.id, enabled)}
+              onToggle={() => handleToggle(timer.id)}
             />
           ))
         )}

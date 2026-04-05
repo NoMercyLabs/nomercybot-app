@@ -24,7 +24,7 @@ export function DataTable<T>({
     <ScrollView horizontal className={cn('', className)}>
       <View className="min-w-full">
         {/* Header */}
-        <View className="flex-row border-b border-gray-800 bg-gray-900/50">
+        <View className="flex-row" style={{ borderBottomWidth: 1, borderBottomColor: '#1e1a35', backgroundColor: '#231D42' }}>
           {columns.map((col) => (
             <View
               key={col.key}

@@ -40,39 +40,46 @@ export function ScopeUpgradePrompt() {
       onRequestClose={dismissScopeUpgrade}
     >
       <View className="flex-1 items-center justify-center bg-black/60 px-6">
-        <View className="w-full max-w-sm rounded-2xl bg-surface-raised p-6 gap-5">
+        <View
+          className="w-full max-w-sm rounded-2xl p-6 gap-5"
+          style={{ backgroundColor: '#1A1530', borderWidth: 1, borderColor: '#1e1a35' }}
+        >
           {/* Header */}
           <View className="flex-row items-start justify-between gap-3">
             <View className="flex-1 flex-row items-center gap-3">
-              <View className="w-10 h-10 rounded-full bg-[#9147ff]/20 items-center justify-center">
+              <View
+                className="w-10 h-10 rounded-full items-center justify-center"
+                style={{ backgroundColor: 'rgba(145,71,255,0.2)' }}
+              >
                 <ShieldCheck size={20} color="#9147ff" strokeWidth={2} />
               </View>
-              <Text className="flex-1 text-lg font-bold text-gray-100">
+              <Text className="flex-1 text-lg font-bold text-white">
                 Additional Permissions Needed
               </Text>
             </View>
             <Pressable
               onPress={dismissScopeUpgrade}
-              className="p-1 rounded-lg active:opacity-60"
+              className="p-1 rounded-lg"
               hitSlop={8}
             >
-              <X size={18} color="#9ca3af" strokeWidth={2} />
+              <X size={18} color="#5a5280" strokeWidth={2} />
             </Pressable>
           </View>
 
           {/* Body */}
           <View className="gap-3">
-            <Text className="text-gray-400 text-sm">
+            <Text className="text-sm" style={{ color: '#8889a0' }}>
               This feature needs additional permissions to work:
             </Text>
             <View className="gap-1.5">
               {(pendingScopeUpgrade ?? []).map((scope) => (
                 <View
                   key={scope}
-                  className="flex-row items-center gap-2 rounded-lg bg-surface px-3 py-2"
+                  className="flex-row items-center gap-2 rounded-lg px-3 py-2"
+                  style={{ backgroundColor: '#231D42' }}
                 >
-                  <View className="w-1.5 h-1.5 rounded-full bg-[#9147ff]" />
-                  <Text className="text-gray-300 text-sm font-mono">{scope}</Text>
+                  <View className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#9147ff' }} />
+                  <Text className="text-sm font-mono text-white">{scope}</Text>
                 </View>
               ))}
             </View>
@@ -82,15 +89,16 @@ export function ScopeUpgradePrompt() {
           <View className="gap-3">
             <Pressable
               onPress={handleGrantAccess}
-              className="w-full flex-row items-center justify-center gap-2 rounded-xl bg-[#9147ff] py-3.5 active:opacity-80"
+              className="w-full flex-row items-center justify-center gap-2 rounded-xl py-3.5"
+              style={{ backgroundColor: '#9147ff' }}
             >
               <Text className="text-white font-semibold">Grant Access</Text>
             </Pressable>
             <Pressable
               onPress={dismissScopeUpgrade}
-              className="w-full items-center py-3 active:opacity-60"
+              className="w-full items-center py-3"
             >
-              <Text className="text-gray-400">Not now</Text>
+              <Text style={{ color: '#5a5280' }}>Not now</Text>
             </Pressable>
           </View>
         </View>

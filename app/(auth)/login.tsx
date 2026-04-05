@@ -8,15 +8,18 @@ export default function LoginScreen() {
   const { t } = useTranslation('common')
 
   return (
-    <View className="flex-1 items-center justify-center bg-surface px-6">
+    <View className="flex-1 items-center justify-center px-6" style={{ backgroundColor: '#141125' }}>
       <View className="w-full max-w-sm items-center gap-8">
         {/* Branding */}
         <View className="items-center gap-3">
-          <View className="w-20 h-20 rounded-2xl bg-surface-raised items-center justify-center">
+          <View
+            className="w-20 h-20 rounded-2xl items-center justify-center"
+            style={{ backgroundColor: '#1A1530' }}
+          >
             <Text className="text-4xl">🤖</Text>
           </View>
-          <Text className="text-3xl font-bold text-gray-100 tracking-tight">NomercyBot</Text>
-          <Text className="text-gray-400 text-center text-base leading-relaxed">
+          <Text className="text-3xl font-bold tracking-tight" style={{ color: '#f4f5fa' }}>NomercyBot</Text>
+          <Text className="text-center text-base leading-relaxed" style={{ color: '#8889a0' }}>
             {t('auth.loginSubtitle', 'Your all-in-one Twitch stream bot.\nAutomate, moderate, and engage.')}
           </Text>
         </View>
@@ -26,14 +29,21 @@ export default function LoginScreen() {
           <TwitchLoginButton onPress={login} isLoading={isLoading} />
 
           {error ? (
-            <View className="rounded-xl bg-red-500/10 border border-red-500/30 px-4 py-3">
-              <Text className="text-red-400 text-sm text-center">{error}</Text>
+            <View
+              className="rounded-xl px-4 py-3"
+              style={{
+                backgroundColor: 'rgba(239,68,68,0.1)',
+                borderWidth: 1,
+                borderColor: 'rgba(239,68,68,0.3)',
+              }}
+            >
+              <Text className="text-sm text-center" style={{ color: '#f87171' }}>{error}</Text>
             </View>
           ) : null}
         </View>
 
         {/* Footer */}
-        <Text className="text-xs text-gray-600 text-center">
+        <Text className="text-xs text-center" style={{ color: '#5a5280' }}>
           {t('auth.termsPrivacy', 'By signing in, you agree to our Terms of Service and Privacy Policy.')}
         </Text>
       </View>

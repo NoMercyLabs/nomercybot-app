@@ -1,4 +1,5 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
+import { API_BASE_URL } from '@/lib/utils/apiUrl'
 import type { ApiError } from './types'
 
 // Module-level token avoids circular dependency with auth store.
@@ -9,7 +10,7 @@ export function setAuthToken(token: string | null): void {
   _token = token
 }
 
-const baseURL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:5080'
+const baseURL = API_BASE_URL
 
 export const apiClient = axios.create({
   baseURL,
@@ -20,9 +21,12 @@ export const apiClient = axios.create({
   },
 })
 
-// Request interceptor — inject auth token + dev logging
+// Request interceptor — inject auth token, rewrite /v1/ → /api/v1/, dev logging
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    if (config.url?.startsWith('/v1/')) {
+      config.url = `/api${config.url}`
+    }
     if (_token && !config.headers['Authorization']) {
       config.headers['Authorization'] = `Bearer ${_token}`
     }

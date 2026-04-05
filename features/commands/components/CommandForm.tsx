@@ -10,8 +10,6 @@ import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
 import type { Command, CommandCreate, CommandUpdate, PermissionLevel } from '../types'
 
-// ─── Zod Schema ─────────────────────────────────────────────────────────────
-
 const schema = z
   .object({
     name: z
@@ -27,11 +25,9 @@ const schema = z
     cooldown: z.number().min(0).max(3600).default(5),
     cooldownPerUser: z.boolean().default(false),
     aliases: z.array(z.object({ value: z.string() })).default([]),
-    // Response mode
     multipleResponses: z.boolean().default(false),
     response: z.string().max(500).optional(),
     responses: z.array(z.object({ value: z.string() })).default([]),
-    // Pipeline mode
     usePipeline: z.boolean().default(false),
     pipeline: z.string().optional(),
   })
@@ -50,8 +46,6 @@ const schema = z
 
 type FormData = z.infer<typeof schema>
 
-// ─── Constants ───────────────────────────────────────────────────────────────
-
 const PERMISSION_OPTIONS: { label: string; value: PermissionLevel }[] = [
   { label: 'Viewer', value: 'everyone' },
   { label: 'Subscriber', value: 'subscriber' },
@@ -60,16 +54,12 @@ const PERMISSION_OPTIONS: { label: string; value: PermissionLevel }[] = [
   { label: 'Broadcaster', value: 'broadcaster' },
 ]
 
-// ─── Props ───────────────────────────────────────────────────────────────────
-
 interface CommandFormProps {
   command?: Command
   pipelines?: { id: string; name: string }[]
   onSubmit: (data: CommandCreate | CommandUpdate) => Promise<unknown>
   isSubmitting?: boolean
 }
-
-// ─── Component ───────────────────────────────────────────────────────────────
 
 export function CommandForm({ command, pipelines = [], onSubmit, isSubmitting }: CommandFormProps) {
   const existingResponses = command?.responses?.length
@@ -92,36 +82,32 @@ export function CommandForm({ command, pipelines = [], onSubmit, isSubmitting }:
       enabled: command?.isEnabled ?? true,
       permission: command?.permission ?? 'everyone',
       description: command?.description ?? '',
-      cooldown: command?.cooldown ?? command?.cooldownSeconds ?? 5,
+      cooldown: command?.cooldownSeconds ?? 5,
       cooldownPerUser: command?.cooldownPerUser ?? false,
       aliases: existingAliases,
       multipleResponses: (command?.responses?.length ?? 0) >= 1,
       response: command?.response ?? '',
       responses: existingResponses,
       usePipeline: !!command?.pipeline,
-      pipeline: command?.pipeline ?? '',
+      pipeline: (command?.pipeline as { id?: string } | null)?.id ?? '',
     },
   })
 
-  // Field arrays
   const aliasesArray = useFieldArray({ control, name: 'aliases' })
   const responsesArray = useFieldArray({ control, name: 'responses' })
 
-  // Watched toggles
   const multipleResponses = watch('multipleResponses')
   const usePipeline = watch('usePipeline')
 
-  // Pipeline options for Select
   const pipelineOptions = pipelines.map((p) => ({ label: p.name, value: p.id }))
 
-  // Transform form data → API shape
   async function handleFormSubmit(data: FormData) {
     const payload: CommandCreate | CommandUpdate = {
       name: data.name,
-      enabled: data.enabled,
+      isEnabled: data.enabled,
       permission: data.permission,
       description: data.description ?? undefined,
-      cooldown: data.cooldown,
+      cooldownSeconds: data.cooldown,
       cooldownPerUser: data.cooldownPerUser,
       aliases: data.aliases.map((a) => a.value).filter(Boolean),
     }
@@ -155,7 +141,6 @@ export function CommandForm({ command, pipelines = [], onSubmit, isSubmitting }:
 
   return (
     <View className="gap-4">
-      {/* ── Name ── */}
       <Controller
         control={control}
         name="name"
@@ -171,7 +156,6 @@ export function CommandForm({ command, pipelines = [], onSubmit, isSubmitting }:
         )}
       />
 
-      {/* ── Enabled ── */}
       <Controller
         control={control}
         name="enabled"
@@ -185,7 +169,6 @@ export function CommandForm({ command, pipelines = [], onSubmit, isSubmitting }:
         )}
       />
 
-      {/* ── Permission ── */}
       <Controller
         control={control}
         name="permission"
@@ -200,7 +183,6 @@ export function CommandForm({ command, pipelines = [], onSubmit, isSubmitting }:
         )}
       />
 
-      {/* ── Cooldown ── */}
       <Controller
         control={control}
         name="cooldown"
@@ -216,7 +198,6 @@ export function CommandForm({ command, pipelines = [], onSubmit, isSubmitting }:
         )}
       />
 
-      {/* ── Cooldown Per User ── */}
       <Controller
         control={control}
         name="cooldownPerUser"
@@ -230,7 +211,6 @@ export function CommandForm({ command, pipelines = [], onSubmit, isSubmitting }:
         )}
       />
 
-      {/* ── Description ── */}
       <Controller
         control={control}
         name="description"
@@ -244,16 +224,17 @@ export function CommandForm({ command, pipelines = [], onSubmit, isSubmitting }:
         )}
       />
 
-      {/* ── Aliases ── */}
+      {/* Aliases */}
       <View className="gap-2">
         <View className="flex-row items-center justify-between">
-          <Text className="text-sm font-medium text-gray-300">Aliases</Text>
+          <Text className="text-sm font-medium" style={{ color: '#d1d5db' }}>Aliases</Text>
           <Pressable
             onPress={() => aliasesArray.append({ value: '' })}
-            className="flex-row items-center gap-1 px-2 py-1 rounded-lg bg-surface-raised"
+            className="flex-row items-center gap-1 px-2 py-1 rounded-lg"
+            style={{ backgroundColor: '#1A1530' }}
           >
-            <Plus size={14} color="rgb(167, 139, 250)" />
-            <Text className="text-xs text-accent-400 font-medium">Add Alias</Text>
+            <Plus size={14} color="#a78bfa" />
+            <Text className="text-xs font-medium" style={{ color: '#a78bfa' }}>Add Alias</Text>
           </Pressable>
         </View>
 
@@ -275,20 +256,20 @@ export function CommandForm({ command, pipelines = [], onSubmit, isSubmitting }:
             </View>
             <Pressable
               onPress={() => aliasesArray.remove(index)}
-              className="p-2 rounded-lg bg-red-900/30"
+              className="p-2 rounded-lg"
+              style={{ backgroundColor: 'rgba(239,68,68,0.2)' }}
             >
-              <Trash2 size={16} color="rgb(252, 165, 165)" />
+              <Trash2 size={16} color="#fca5a5" />
             </Pressable>
           </View>
         ))}
 
         {aliasesArray.fields.length === 0 && (
-          <Text className="text-xs text-gray-500 italic">No aliases. Tap Add Alias to create one.</Text>
+          <Text className="text-xs italic" style={{ color: '#6b7280' }}>No aliases. Tap Add Alias to create one.</Text>
         )}
       </View>
 
-      {/* ── Pipeline Toggle ── */}
-      <View className="h-px bg-border" />
+      <View style={{ height: 1, backgroundColor: '#1e1a35' }} />
 
       <Controller
         control={control}
@@ -304,7 +285,6 @@ export function CommandForm({ command, pipelines = [], onSubmit, isSubmitting }:
       />
 
       {usePipeline ? (
-        /* ── Pipeline Selector ── */
         <Controller
           control={control}
           name="pipeline"
@@ -320,7 +300,6 @@ export function CommandForm({ command, pipelines = [], onSubmit, isSubmitting }:
           )}
         />
       ) : (
-        /* ── Response Section ── */
         <View className="gap-3">
           <Controller
             control={control}
@@ -336,16 +315,16 @@ export function CommandForm({ command, pipelines = [], onSubmit, isSubmitting }:
           />
 
           {multipleResponses ? (
-            /* ── Multiple Response Field Array ── */
             <View className="gap-2">
               <View className="flex-row items-center justify-between">
-                <Text className="text-sm font-medium text-gray-300">Responses</Text>
+                <Text className="text-sm font-medium" style={{ color: '#d1d5db' }}>Responses</Text>
                 <Pressable
                   onPress={() => responsesArray.append({ value: '' })}
-                  className="flex-row items-center gap-1 px-2 py-1 rounded-lg bg-surface-raised"
+                  className="flex-row items-center gap-1 px-2 py-1 rounded-lg"
+                  style={{ backgroundColor: '#1A1530' }}
                 >
-                  <Plus size={14} color="rgb(167, 139, 250)" />
-                  <Text className="text-xs text-accent-400 font-medium">Add Response</Text>
+                  <Plus size={14} color="#a78bfa" />
+                  <Text className="text-xs font-medium" style={{ color: '#a78bfa' }}>Add Response</Text>
                 </Pressable>
               </View>
 
@@ -367,21 +346,21 @@ export function CommandForm({ command, pipelines = [], onSubmit, isSubmitting }:
                   </View>
                   <Pressable
                     onPress={() => responsesArray.remove(index)}
-                    className="p-2 mt-1 rounded-lg bg-red-900/30"
+                    className="p-2 mt-1 rounded-lg"
+                    style={{ backgroundColor: 'rgba(239,68,68,0.2)' }}
                   >
-                    <Trash2 size={16} color="rgb(252, 165, 165)" />
+                    <Trash2 size={16} color="#fca5a5" />
                   </Pressable>
                 </View>
               ))}
 
               {responsesArray.fields.length === 0 && (
-                <Text className={`text-xs italic ${errors.responses?.message ? 'text-red-400' : 'text-gray-500'}`}>
+                <Text className="text-xs italic" style={{ color: errors.responses?.message ? '#f87171' : '#6b7280' }}>
                   {errors.responses?.message ?? 'No responses. Tap Add Response to create one.'}
                 </Text>
               )}
             </View>
           ) : (
-            /* ── Single Response ── */
             <Controller
               control={control}
               name="response"
@@ -400,9 +379,8 @@ export function CommandForm({ command, pipelines = [], onSubmit, isSubmitting }:
         </View>
       )}
 
-      <View className="h-px bg-border" />
+      <View style={{ height: 1, backgroundColor: '#1e1a35' }} />
 
-      {/* ── Submit ── */}
       <Button
         label={isSubmitting ? 'Saving…' : 'Save Command'}
         onPress={handleSubmit(handleFormSubmit)}

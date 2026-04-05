@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 import { appStorage } from '@/lib/storage'
 import { apiClient, setAuthToken } from '@/lib/api/client'
 import { setSignalRTokenGetter, destroyAllConnections } from '@/lib/signalr/connection'
+import { API_BASE_URL } from '@/lib/utils/apiUrl'
 import * as WebBrowser from 'expo-web-browser'
 import { makeRedirectUri } from 'expo-auth-session'
 import { Platform } from 'react-native'
@@ -25,7 +26,15 @@ interface AuthState {
   init: () => Promise<void>
   login: () => Promise<void>
   logout: () => Promise<void>
-  handleCallback: (params: { code?: string; state?: string; token?: string; scopes?: string }) => Promise<boolean>
+  handleCallback: (params: {
+    access_token?: string
+    refresh_token?: string
+    expires_in?: string
+    code?: string
+    state?: string
+    token?: string
+    scopes?: string
+  }) => Promise<boolean>
   completeOnboarding: () => void
   setAuth: (data: { user: User; accessToken: string; refreshToken: string; expiresIn: number; scopes?: string[] }) => void
   refreshToken: () => Promise<void>
@@ -33,8 +42,6 @@ interface AuthState {
   requestScopeUpgrade: (scopes: string[]) => Promise<void>
   dismissScopeUpgrade: () => void
 }
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:7000'
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -65,34 +72,77 @@ export const useAuthStore = create<AuthState>()(
       },
 
       login: async () => {
-        const redirectUri = makeRedirectUri({ scheme: 'nomercybot', path: 'callback' })
         if (Platform.OS === 'web') {
-          const base = typeof window !== 'undefined' ? window.location.origin : API_URL
-          window.location.href = `${base}/auth/twitch`
+          const webCallback = `${window.location.origin}/callback`
+          window.location.href = `${API_BASE_URL}/api/v1/auth/twitch?redirect_uri=${encodeURIComponent(webCallback)}`
           return
         }
-        const authUrl = `${API_URL}/api/auth/twitch?redirect_uri=${encodeURIComponent(redirectUri)}`
+
+        // Native: open the backend's OAuth endpoint in a Chrome Custom Tab.
+        // Twitch requires HTTPS redirect URIs — custom schemes aren't allowed — so the
+        // flow goes:  App → Backend → Twitch → Backend (HTTPS) → nomercybot://callback
+        //
+        // For Android development, EXPO_PUBLIC_API_URL must point to a tunnel (ngrok,
+        // cloudflare) or the machine's LAN IP so the Chrome Custom Tab can reach the
+        // backend. The emulator auto-rewrite (localhost → 10.0.2.2) handles the app's
+        // own API calls, but Twitch redirects to the backend's configured RedirectUri
+        // which also must be reachable from the browser.
+        const redirectUri = makeRedirectUri({ scheme: 'nomercybot', path: 'callback' })
+        const authUrl = `${API_BASE_URL}/api/v1/auth/twitch?redirect_uri=${encodeURIComponent(redirectUri)}`
         await WebBrowser.openAuthSessionAsync(authUrl, redirectUri)
-        // Result handled by deep-link → app/(auth)/callback.tsx
+        // Backend processes OAuth, then redirects to nomercybot://callback?access_token=...
       },
 
-      handleCallback: async ({ code, state: oauthState, token, scopes }) => {
+      handleCallback: async ({ access_token, refresh_token, expires_in, code, state: oauthState, token, scopes }) => {
         set({ isLoading: true })
         try {
-          const redirectUri = makeRedirectUri({ scheme: 'nomercybot', path: 'callback' })
-          let res: { data: { user: User; accessToken: string; refreshToken: string; expiresIn: number; scopes?: string[] } }
+          // Reset stale channel data from previous sessions
+          const { useChannelStore } = await import('@/stores/useChannelStore')
+          useChannelStore.getState().reset()
 
-          if (token) {
-            res = await apiClient.post('/auth/exchange', { token })
-          } else if (code) {
-            res = await apiClient.post('/auth/twitch/callback', { code, state: oauthState, redirectUri })
-          } else {
-            return false
+          // Fresh login always starts onboarding
+          set({ onboardingComplete: false })
+
+          // Primary path: backend redirected with tokens in the deep-link URL
+          if (access_token && refresh_token) {
+            const expiresIn = parseInt(expires_in ?? '3600', 10)
+
+            // Store tokens first so the /me call is authenticated
+            setAuthToken(access_token)
+            setSignalRTokenGetter(() => useAuthStore.getState().accessToken ?? '')
+
+            // Fetch user profile
+            const meRes = await apiClient.get<{ data: User }>('/api/v1/auth/me')
+
+            get().setAuth({
+              user: meRes.data.data,
+              accessToken: access_token,
+              refreshToken: refresh_token,
+              expiresIn,
+              scopes: scopes ? scopes.split(' ') : [],
+            })
+            return true
           }
 
-          const grantedScopes = res.data.scopes ?? (scopes ? scopes.split(' ') : [])
-          get().setAuth({ ...res.data, scopes: grantedScopes })
-          return true
+          // Code flow: exchange authorization code for tokens via backend POST
+          if (code) {
+            const redirectUri = makeRedirectUri({ scheme: 'nomercybot', path: 'callback' })
+            const res = await apiClient.post<{
+              data: { accessToken: string; refreshToken: string; expiresIn: number; user: User }
+            }>('/api/v1/auth/twitch/callback', { code, state: oauthState, redirectUri })
+
+            const { accessToken, refreshToken, expiresIn, user } = res.data.data
+            get().setAuth({
+              user,
+              accessToken,
+              refreshToken,
+              expiresIn,
+              scopes: scopes ? scopes.split(' ') : [],
+            })
+            return true
+          }
+
+          return false
         } catch {
           return false
         } finally {
@@ -123,17 +173,15 @@ export const useAuthStore = create<AuthState>()(
         set({ isRefreshing: true })
         try {
           const res = await apiClient.post<{
-            accessToken: string
-            refreshToken: string
-            expiresIn: number
-          }>('/auth/refresh', { refreshToken: refreshTokenValue })
+            data: { accessToken: string; refreshToken: string; expiresIn: number }
+          }>('/api/v1/auth/refresh', { refreshToken: refreshTokenValue })
 
           set({
-            accessToken: res.data.accessToken,
-            refreshTokenValue: res.data.refreshToken,
-            expiresAt: Date.now() + res.data.expiresIn * 1000,
+            accessToken: res.data.data.accessToken,
+            refreshTokenValue: res.data.data.refreshToken,
+            expiresAt: Date.now() + res.data.data.expiresIn * 1000,
           })
-          setAuthToken(res.data.accessToken)
+          setAuthToken(res.data.data.accessToken)
         } catch {
           await get().logout()
         } finally {
@@ -142,6 +190,11 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: async () => {
+        try {
+          await apiClient.post('/api/v1/auth/logout')
+        } catch {
+          // Best-effort — clear local state regardless
+        }
         setAuthToken(null)
         await destroyAllConnections()
         set({
@@ -169,21 +222,15 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'nomercybot-auth',
       storage: createJSONStorage(() => appStorage),
-      partialize: (state) => {
-        const base = {
-          user: state.user,
-          expiresAt: state.expiresAt,
-          isAuthenticated: state.isAuthenticated,
-          onboardingComplete: state.onboardingComplete,
-          grantedScopes: state.grantedScopes,
-        }
-        if (Platform.OS === 'web') {
-          // On web, localStorage is plaintext — keep tokens in-memory only
-          return base
-        }
-        // On native, SecureStore encrypts — safe to persist tokens
-        return { ...base, accessToken: state.accessToken, refreshTokenValue: state.refreshTokenValue }
-      },
+      partialize: (state) => ({
+        user: state.user,
+        accessToken: state.accessToken,
+        refreshTokenValue: state.refreshTokenValue,
+        expiresAt: state.expiresAt,
+        isAuthenticated: state.isAuthenticated,
+        onboardingComplete: state.onboardingComplete,
+        grantedScopes: state.grantedScopes,
+      }),
     },
   ),
 )

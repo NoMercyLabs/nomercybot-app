@@ -27,13 +27,13 @@ export function StreamStatus() {
         </Badge>
       </View>
       {data?.title && (
-        <Text className="text-sm text-gray-300" numberOfLines={1}>{data.title}</Text>
+        <Text className="text-sm" style={{ color: '#cdcede' }} numberOfLines={1}>{data.title}</Text>
       )}
       {data?.gameName && (
-        <Text className="text-xs text-gray-500">{data.gameName}</Text>
+        <Text className="text-xs" style={{ color: '#8889a0' }}>{data.gameName}</Text>
       )}
       {isLive && data?.startedAt && (
-        <Text className="text-xs text-gray-500">
+        <Text className="text-xs" style={{ color: '#8889a0' }}>
           Started {format(new Date(data.startedAt), 'h:mm a')}
         </Text>
       )}

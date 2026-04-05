@@ -2,40 +2,55 @@ export type PermissionLevel = 'everyone' | 'subscriber' | 'vip' | 'moderator' | 
 
 export type CommandType = 'text' | 'pipeline'
 
-export interface Command {
-  id: string
+/** Matches backend CommandListItem — returned by the paginated list endpoint. */
+export interface CommandListItem {
+  id: number
   name: string
-  type?: CommandType
+  type: CommandType
   permission: PermissionLevel
-  isEnabled?: boolean
-  response?: string
-  responses?: string[]
-  pipeline?: string
-  cooldown: number
-  cooldownSeconds?: number
-  cooldownPerUser?: boolean
+  isEnabled: boolean
+  cooldownSeconds: number
   description?: string
   aliases: string[]
-  usageCount?: number
+  usageCount: number
+  createdAt: string
+}
+
+/** Matches backend CommandDto — returned by get/create/update endpoints. */
+export interface Command {
+  id: number
+  name: string
+  type: CommandType
+  permission: PermissionLevel
+  isEnabled: boolean
+  response?: string
+  responses?: string[]
+  pipeline?: object | null
+  cooldownSeconds: number
+  cooldownPerUser: boolean
+  description?: string
+  aliases: string[]
+  usageCount: number
   createdAt: string
   updatedAt: string
 }
 
+/** Matches backend CreateCommandDto. */
 export interface CommandCreate {
   name: string
   type?: CommandType
   response?: string
   responses?: string[]
-  pipeline?: string
-  cooldown?: number
+  pipeline?: object
+  cooldownSeconds?: number
   cooldownPerUser?: boolean
   permission?: PermissionLevel
   aliases?: string[]
   description?: string
-  enabled?: boolean
+  isEnabled?: boolean
 }
 
-export interface CommandUpdate extends Partial<CommandCreate> {
-  enabled?: boolean
+/** Matches backend UpdateCommandDto — all fields optional. */
+export interface CommandUpdate extends Partial<Omit<CommandCreate, 'name'>> {
   isEnabled?: boolean
 }

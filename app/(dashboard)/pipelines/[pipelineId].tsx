@@ -37,7 +37,7 @@ export default function PipelineEditorScreen() {
   }
 
   return (
-    <View className="flex-1 bg-surface">
+    <View className="flex-1" style={{ backgroundColor: '#141125' }}>
       <PageHeader
         title={isNew ? 'New Pipeline' : (pipeline?.name ?? 'Pipeline')}
         backHref="/(dashboard)/pipelines"

@@ -40,9 +40,9 @@ export function EventResponseCard({ eventType, config, onConfigure, onToggle }: 
         <View className="flex-1 gap-1">
           <View className="flex-row items-center gap-2">
             <Zap size={14} color="#8889a0" />
-            <Text className="text-sm font-semibold text-gray-100">{label}</Text>
+            <Text className="text-sm font-semibold text-white">{label}</Text>
           </View>
-          <Text className="text-xs text-gray-500 leading-relaxed" numberOfLines={2}>
+          <Text className="text-xs leading-relaxed" style={{ color: '#8889a0' }} numberOfLines={2}>
             {description}
           </Text>
         </View>

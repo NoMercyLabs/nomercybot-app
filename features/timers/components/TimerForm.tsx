@@ -14,7 +14,7 @@ import type { Timer, TimerCreate, TimerUpdate } from '../types'
 const schema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
   intervalMinutes: z.number().min(1, 'Minimum 1 minute').max(1440, 'Maximum 24 hours'),
-  minChatLines: z.number().min(0).max(1000),
+  minChatActivity: z.number().min(0).max(10000),
   isEnabled: z.boolean(),
 })
 
@@ -40,7 +40,7 @@ export function TimerForm({ timer, onSubmit, isSubmitting }: TimerFormProps) {
     defaultValues: {
       name: timer?.name ?? '',
       intervalMinutes: timer?.intervalMinutes ?? 30,
-      minChatLines: timer?.minChatLines ?? 0,
+      minChatActivity: timer?.minChatActivity ?? 0,
       isEnabled: timer?.isEnabled ?? true,
     },
   })
@@ -82,8 +82,8 @@ export function TimerForm({ timer, onSubmit, isSubmitting }: TimerFormProps) {
 
         {/* Messages */}
         <View className="gap-2">
-          <Text className="text-sm font-medium text-gray-300">Messages</Text>
-          <Text className="text-xs text-gray-500">
+          <Text className="text-sm font-medium" style={{ color: '#cdcede' }}>Messages</Text>
+          <Text className="text-xs" style={{ color: '#8889a0' }}>
             The bot will cycle through these messages in order.
           </Text>
           {messages.map((msg, index) => (
@@ -99,7 +99,7 @@ export function TimerForm({ timer, onSubmit, isSubmitting }: TimerFormProps) {
               {messages.length > 1 && (
                 <Pressable
                   onPress={() => removeMessage(index)}
-                  className="mt-1 rounded-md p-2 active:bg-surface-overlay"
+                  className="mt-1 rounded-md p-2"
                 >
                   <Trash2 size={16} color="#ef4444" />
                 </Pressable>
@@ -119,7 +119,7 @@ export function TimerForm({ timer, onSubmit, isSubmitting }: TimerFormProps) {
         </View>
 
         <Card className="gap-4">
-          <Text className="text-sm font-semibold text-gray-300">Schedule</Text>
+          <Text className="text-sm font-semibold" style={{ color: '#cdcede' }}>Schedule</Text>
 
           <Controller
             control={control}
@@ -138,7 +138,7 @@ export function TimerForm({ timer, onSubmit, isSubmitting }: TimerFormProps) {
 
           <Controller
             control={control}
-            name="minChatLines"
+            name="minChatActivity"
             render={({ field: { onChange, value } }) => (
               <Input
                 label="Minimum chat lines"

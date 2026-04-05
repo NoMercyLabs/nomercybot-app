@@ -43,10 +43,13 @@ export default function DashboardLayout() {
   // Tablet: collapsible sidebar (no bottom tabs)
   if (isDesktop || isTablet) {
     return (
-      <View className="flex-1 flex-row bg-surface">
+      <View className="flex-1 flex-row" style={{ backgroundColor: '#0D0B1A' }}>
         <Sidebar />
-        <View className="flex-1">
-          <View className="flex-row items-center justify-between border-b border-border px-6 py-3">
+        <View className="flex-1" style={{ backgroundColor: '#141125' }}>
+          <View
+            className="flex-row items-center justify-between px-6 py-3"
+            style={{ borderBottomWidth: 1, borderBottomColor: '#1e1a35' }}
+          >
             <ChannelSwitcher />
             <ConnectionStatus />
           </View>
@@ -64,11 +67,11 @@ export default function DashboardLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: 'rgb(17, 24, 39)',
-          borderTopColor: 'rgb(75, 85, 99)',
+          backgroundColor: '#0F0D1E',
+          borderTopColor: '#1e1a35',
         },
-        tabBarActiveTintColor: 'rgb(124, 58, 237)', // accent-500 (--color-accent-500: 124 58 237)
-        tabBarInactiveTintColor: 'rgb(136, 137, 160)',
+        tabBarActiveTintColor: '#8b5cf6',
+        tabBarInactiveTintColor: '#5a5280',
       }}
     >
       <Tabs.Screen
@@ -100,9 +103,11 @@ export default function DashboardLayout() {
       <Tabs.Screen name="integrations" options={{ href: null }} />
       <Tabs.Screen name="permissions" options={{ href: null }} />
       <Tabs.Screen name="billing" options={{ href: null }} />
+      <Tabs.Screen name="features" options={{ href: null }} />
       <Tabs.Screen name="timers" options={{ href: null }} />
       <Tabs.Screen name="my-data" options={{ href: null }} />
       <Tabs.Screen name="event-responses" options={{ href: null }} />
+      <Tabs.Screen name="admin" options={{ href: null }} />
     </Tabs>
   )
 }

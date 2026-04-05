@@ -8,9 +8,10 @@ export function usePermissions() {
 
   function hasPermission(permission: Permission): boolean {
     if (!user || !currentChannel) return false
-    if (user.twitchId === currentChannel.twitchId) return true // Broadcaster has all perms
-    if (user.isAdmin) return true // Platform admin
-    return user.permissions?.includes(permission) ?? false
+    // Broadcaster owns the channel → full permissions
+    if (user.id === currentChannel.twitchId) return true
+    // TODO: role-based permissions once backend supports it
+    return false
   }
 
   function requirePermission(permission: Permission): void {

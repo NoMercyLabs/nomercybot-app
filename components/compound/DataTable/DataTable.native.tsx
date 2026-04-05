@@ -34,7 +34,8 @@ export function DataTable<T>({
       renderItem={({ item }) => (
         <Pressable
           onPress={() => onRowPress?.(item)}
-          className="rounded-xl border border-gray-800 bg-gray-900 p-4 gap-2"
+          className="rounded-xl p-4 gap-2"
+          style={{ backgroundColor: '#1A1530', borderWidth: 1, borderColor: '#1e1a35' }}
         >
           {columns.slice(0, 3).map((col) => {
             const value = (item as any)[col.key]

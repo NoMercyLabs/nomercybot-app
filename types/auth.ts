@@ -1,13 +1,15 @@
 export interface User {
+  /** Twitch user ID (also the primary key in the backend). */
   id: string
-  twitchId: string
-  login: string
+  /** Twitch login name (lowercase). */
+  username: string
+  /** Twitch display name. */
   displayName: string
-  profileImageUrl: string
-  chatColor: string
-  email: string
+  profileImageUrl: string | null
+  /** Twitch chat color hex (e.g. "#FF0000"). */
+  color: string | null
+  broadcasterType: string
   isAdmin: boolean
-  permissions: string[]
   createdAt: string
 }
 

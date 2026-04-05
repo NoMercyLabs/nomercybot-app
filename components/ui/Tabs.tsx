@@ -22,7 +22,7 @@ export function Tabs({ tabs, activeKey, activeTab, onChange, onTabChange, classN
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      className={cn('border-b border-border', className)}
+      className={cn('border-b border-[#1e1a35]', className)}
     >
       <View className="flex-row">
         {tabs.map((tab) => (
@@ -31,14 +31,12 @@ export function Tabs({ tabs, activeKey, activeTab, onChange, onTabChange, classN
             onPress={() => handleChange(tab.key)}
             className={cn(
               'px-4 py-3 border-b-2',
-              currentKey === tab.key ? 'border-accent-500' : 'border-transparent',
+              currentKey === tab.key ? 'border-[#8b5cf6]' : 'border-transparent',
             )}
           >
             <Text
-              className={cn(
-                'text-sm font-medium',
-                currentKey === tab.key ? 'text-accent-400' : 'text-gray-400',
-              )}
+              className={cn('text-sm font-medium')}
+              style={{ color: currentKey === tab.key ? '#a78bfa' : '#9ca3af' }}
             >
               {tab.label}
             </Text>

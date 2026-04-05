@@ -11,13 +11,13 @@ export interface BadgeProps {
 }
 
 const variantStyles: Record<BadgeVariant, { container: string; text: string }> = {
-  default: { container: 'bg-accent-900', text: 'text-accent-300' },
-  info: { container: 'bg-accent-900', text: 'text-accent-300' },
+  default: { container: 'bg-[#1e1043]', text: 'text-[#a78bfa]' },
+  info: { container: 'bg-[#1e1043]', text: 'text-[#a78bfa]' },
   success: { container: 'bg-green-900', text: 'text-green-300' },
   warning: { container: 'bg-amber-900', text: 'text-amber-300' },
   danger: { container: 'bg-red-900', text: 'text-red-300' },
-  secondary: { container: 'bg-surface-overlay', text: 'text-gray-400' },
-  muted: { container: 'bg-surface-overlay', text: 'text-gray-500' },
+  secondary: { container: 'bg-[#231D42]', text: 'text-[#9ca3af]' },
+  muted: { container: 'bg-[#231D42]', text: 'text-[#6b7280]' },
 }
 
 export function Badge({ label, children, variant = 'default', className }: BadgeProps) {

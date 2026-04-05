@@ -14,15 +14,15 @@ export default function CommandGroupsScreen() {
   const { data: groups, isLoading } = useApiQuery<CommandGroup[]>('command-groups', '/commands/groups')
 
   return (
-    <ScrollView className="flex-1 bg-surface">
+    <ScrollView className="flex-1" style={{ backgroundColor: '#141125' }}>
       <PageHeader title="Command Groups" backHref="/(dashboard)/commands" />
       <View className="px-6 py-4 gap-3">
         {isLoading
           ? Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-xl" />)
           : groups?.map((g) => (
               <Card key={g.id} className="flex-row items-center justify-between p-4">
-                <Text className="text-gray-100 font-medium">{g.name}</Text>
-                <Text className="text-gray-400 text-sm">{g.commandCount} commands</Text>
+                <Text className="font-medium" style={{ color: '#f4f5fa' }}>{g.name}</Text>
+                <Text className="text-sm" style={{ color: '#8889a0' }}>{g.commandCount} commands</Text>
               </Card>
             ))}
       </View>

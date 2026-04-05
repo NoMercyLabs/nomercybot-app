@@ -5,28 +5,28 @@ import type { WidgetCreate, WidgetUpdate } from '../types'
 
 export function useWidgets() {
   const qc = useQueryClient()
-  const broadcasterId = useChannelStore((s) => s.currentChannel?.broadcasterId)
+  const channelId = useChannelStore((s) => s.currentChannel?.id)
 
   const { data: widgets = [], isLoading, isRefetching, refetch } = useQuery({
-    queryKey: ['widgets', broadcasterId],
-    queryFn: () => widgetsApi.list(broadcasterId!),
-    enabled: !!broadcasterId,
+    queryKey: ['widgets', channelId],
+    queryFn: () => widgetsApi.list(channelId!),
+    enabled: !!channelId,
   })
 
   const createMutation = useMutation({
-    mutationFn: (data: WidgetCreate) => widgetsApi.create(broadcasterId!, data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['widgets', broadcasterId] }),
+    mutationFn: (data: WidgetCreate) => widgetsApi.create(channelId!, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['widgets', channelId] }),
   })
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: WidgetUpdate }) =>
-      widgetsApi.update(broadcasterId!, id, data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['widgets', broadcasterId] }),
+      widgetsApi.update(channelId!, id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['widgets', channelId] }),
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => widgetsApi.delete(broadcasterId!, id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['widgets', broadcasterId] }),
+    mutationFn: (id: string) => widgetsApi.delete(channelId!, id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['widgets', channelId] }),
   })
 
   return {
@@ -42,10 +42,10 @@ export function useWidgets() {
 }
 
 export function useWidget(id: string) {
-  const broadcasterId = useChannelStore((s) => s.currentChannel?.broadcasterId)
+  const channelId = useChannelStore((s) => s.currentChannel?.id)
   return useQuery({
-    queryKey: ['widgets', broadcasterId, id],
-    queryFn: () => widgetsApi.get(broadcasterId!, id),
-    enabled: !!broadcasterId && !!id && id !== 'new',
+    queryKey: ['widgets', channelId, id],
+    queryFn: () => widgetsApi.get(channelId!, id),
+    enabled: !!channelId && !!id && id !== 'new',
   })
 }

@@ -30,17 +30,18 @@ export function PipelinesScreen() {
 
   return (
     <ErrorBoundary>
-      <View className="flex-1 bg-gray-950">
-        <View className="px-4 pt-4">
-          <PageHeader
-            title={t('title')}
-            rightContent={
-              <Button size="sm" onPress={() => router.push('/(dashboard)/pipelines/new' as any)} leftIcon={<Plus size={14} color="white" />}>
-                {t('addNew')}
-              </Button>
-            }
-          />
-        </View>
+      <View className="flex-1" style={{ backgroundColor: '#141125' }}>
+        <PageHeader
+          title={t('title')}
+          rightContent={
+            <Button
+              size="sm"
+              onPress={() => router.push('/(dashboard)/pipelines/new' as any)}
+              leftIcon={<Plus size={14} color="white" />}
+              label={t('addNew')}
+            />
+          }
+        />
         <DataTable
           columns={columns}
           data={data ?? []}

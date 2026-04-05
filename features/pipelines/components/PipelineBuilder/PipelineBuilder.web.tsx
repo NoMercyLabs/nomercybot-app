@@ -44,7 +44,7 @@ export function PipelineBuilderWeb({ pipeline, onSave }: PipelineBuilderProps) {
 
       {/* Right: Node editor panel */}
       {selectedNode && (
-        <View className="w-80 border-l border-border">
+        <View className="w-80" style={{ borderLeftWidth: 1, borderLeftColor: '#1e1a35' }}>
           <PipelineNodeEditor
             node={selectedNode}
             onUpdate={(updates) => updateNode(selectedNode.id, updates)}

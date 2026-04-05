@@ -14,7 +14,6 @@ import type { SignalREventMap } from '@/types/signalr'
 import type { ConnectionStatus } from '@/lib/signalr/types'
 
 let statusListeners = new Set<(status: ConnectionStatus) => void>()
-let currentChannelRef: string | null = null
 
 function broadcastStatus(status: ConnectionStatus) {
   statusListeners.forEach((fn) => fn(status))
@@ -102,9 +101,6 @@ export function useSignalR() {
         try {
           await conn.start()
           broadcastStatus('connected')
-          if (currentChannelRef) {
-            await conn.invoke('JoinChannel', currentChannelRef)
-          }
         } catch (e) {
           setError((e as Error).message)
         }

@@ -35,11 +35,12 @@ export const useChannelStore = create<ChannelState>()(
       fetchChannels: async () => {
         set({ loading: true, error: null })
         try {
-          const res = await apiClient.get<Channel[]>('/v1/channels')
-          set({ channels: res.data })
+          const res = await apiClient.get<{ data: Channel[] }>('/api/v1/channels')
+          const channels = res.data.data
+          set({ channels })
           const { currentChannel } = get()
-          if (!currentChannel && res.data.length > 0) {
-            set({ currentChannel: res.data[0] })
+          if (!currentChannel && channels.length > 0) {
+            set({ currentChannel: channels[0] })
           }
         } catch (e) {
           set({ error: (e as Error).message })
@@ -51,8 +52,8 @@ export const useChannelStore = create<ChannelState>()(
       selectChannel: async (idOrLogin: string) => {
         set({ loading: true })
         try {
-          const res = await apiClient.get<Channel>(`/v1/channels/${idOrLogin}`)
-          set({ currentChannel: res.data })
+          const res = await apiClient.get<{ data: Channel }>(`/api/v1/channels/${idOrLogin}`)
+          set({ currentChannel: res.data.data })
         } finally {
           set({ loading: false })
         }
@@ -70,9 +71,9 @@ export const useChannelStore = create<ChannelState>()(
     {
       name: 'nomercybot-channel',
       storage: createJSONStorage(() => appStorage),
-      partialState: (state: ChannelState) => ({
+      partialize: (state: ChannelState) => ({
         currentChannel: state.currentChannel,
       }),
-    } as any,
+    },
   ),
 )

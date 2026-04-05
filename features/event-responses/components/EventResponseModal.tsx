@@ -101,7 +101,7 @@ export function EventResponseModal({ visible, eventType, config, onClose, onSave
                 multiline
                 numberOfLines={3}
               />
-              <Text className="text-xs text-gray-500">
+              <Text className="text-xs" style={{ color: '#8889a0' }}>
                 Available variables: {'{user}'}, {'{channel}'}, {'{count}'}
               </Text>
             </View>
@@ -111,7 +111,7 @@ export function EventResponseModal({ visible, eventType, config, onClose, onSave
             pipelinesLoading ? (
               <View className="flex-row items-center gap-2 py-2">
                 <ActivityIndicator size="small" color="rgb(156,163,175)" />
-                <Text className="text-sm text-gray-400">Loading pipelines...</Text>
+                <Text className="text-sm" style={{ color: '#8889a0' }}>Loading pipelines...</Text>
               </View>
             ) : (
               <Select
@@ -125,13 +125,13 @@ export function EventResponseModal({ visible, eventType, config, onClose, onSave
           )}
 
           {responseType === 'none' && (
-            <Text className="text-sm text-gray-500">
+            <Text className="text-sm" style={{ color: '#8889a0' }}>
               No response will be sent for this event.
             </Text>
           )}
 
           {responseType === 'overlay' && (
-            <Text className="text-sm text-gray-500">
+            <Text className="text-sm" style={{ color: '#8889a0' }}>
               Overlay response will use the default overlay configuration.
             </Text>
           )}

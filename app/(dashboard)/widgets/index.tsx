@@ -18,7 +18,7 @@ export default function WidgetsScreen() {
   const { data: widgets, isLoading } = useApiQuery<Widget[]>('widgets', '/widgets')
 
   return (
-    <ScrollView className="flex-1 bg-surface">
+    <ScrollView className="flex-1" style={{ backgroundColor: '#141125' }}>
       <PageHeader title="Widgets" />
       <View className="px-6 py-4 gap-3">
         {isLoading
@@ -27,8 +27,8 @@ export default function WidgetsScreen() {
               <Pressable key={w.id} onPress={() => router.push(`/(dashboard)/widgets/${w.id}` as any)}>
                 <Card className="flex-row items-center justify-between p-4">
                   <View className="gap-1">
-                    <Text className="text-gray-100 font-medium">{w.name}</Text>
-                    <Text className="text-gray-500 text-xs">{w.type}</Text>
+                    <Text className="font-medium" style={{ color: '#f4f5fa' }}>{w.name}</Text>
+                    <Text className="text-xs" style={{ color: '#6b7280' }}>{w.type}</Text>
                   </View>
                   <Badge label={w.enabled ? 'Active' : 'Disabled'} variant={w.enabled ? 'success' : 'secondary'} />
                 </Card>

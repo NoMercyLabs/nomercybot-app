@@ -28,14 +28,14 @@ export function RecentActivity() {
           keyExtractor={(item) => item.id}
           scrollEnabled={false}
           ListEmptyComponent={
-            <Text className="text-sm text-gray-500 py-4 text-center">No recent activity</Text>
+            <Text className="text-sm py-4 text-center" style={{ color: '#8889a0' }}>No recent activity</Text>
           }
           renderItem={({ item }) => (
-            <View className="flex-row items-center gap-3 py-2.5 border-b border-gray-800/50">
+            <View className="flex-row items-center gap-3 py-2.5 border-b" style={{ borderColor: '#1e1a35' }}>
               <View className="flex-1">
-                <Text className="text-sm text-gray-200">{item.message}</Text>
+                <Text className="text-sm text-white">{item.message}</Text>
               </View>
-              <Text className="text-xs text-gray-600">
+              <Text className="text-xs" style={{ color: '#5a5280' }}>
                 {formatDistanceToNow(new Date(item.timestamp), { addSuffix: true })}
               </Text>
             </View>

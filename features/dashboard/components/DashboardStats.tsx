@@ -46,7 +46,7 @@ export function DashboardStats() {
         <Card key={stat.label} className="flex-1 min-w-36 gap-2">
           <stat.icon size={20} color={stat.color} />
           <Text className="text-2xl font-bold text-white">{stat.value.toLocaleString()}</Text>
-          <Text className="text-xs text-gray-500">{stat.label}</Text>
+          <Text className="text-xs" style={{ color: '#8889a0' }}>{stat.label}</Text>
         </Card>
       ))}
     </View>

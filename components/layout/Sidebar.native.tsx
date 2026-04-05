@@ -69,23 +69,25 @@ export function Sidebar() {
 
   return (
     <View
-      className={cn(
-        'h-full border-r border-border bg-surface-raised flex flex-col',
-        sidebarCollapsed ? 'w-16' : 'w-64',
-      )}
+      className={cn('h-full flex flex-col', sidebarCollapsed ? 'w-16' : 'w-64')}
+      style={{ backgroundColor: '#0F0D1E', borderRightWidth: 1, borderRightColor: '#1e1a35' }}
     >
       {/* Header with collapse toggle */}
-      <View className="flex-row items-center justify-between px-4 py-4 border-b border-border">
+      <View
+        className="flex-row items-center justify-between px-4 py-4"
+        style={{ borderBottomWidth: 1, borderBottomColor: '#1e1a35' }}
+      >
         {!sidebarCollapsed && (
-          <Text className="text-gray-100 font-bold text-sm">NomercyBot</Text>
+          <Text className="font-bold text-sm" style={{ color: '#f4f5fa' }}>NomercyBot</Text>
         )}
         <Pressable
           onPress={toggleSidebar}
-          className="p-1 rounded-lg active:bg-surface-overlay ml-auto"
+          className="p-1 rounded-lg ml-auto"
+          style={{ backgroundColor: 'transparent' }}
         >
           {sidebarCollapsed
-            ? <ChevronRight size={16} color="rgb(156,163,175)" />
-            : <ChevronLeft size={16} color="rgb(156,163,175)" />
+            ? <ChevronRight size={16} color="#9ca3af" />
+            : <ChevronLeft size={16} color="#9ca3af" />
           }
         </Pressable>
       </View>
@@ -93,9 +95,11 @@ export function Sidebar() {
       <ScrollView className="flex-1 py-2">
         {NAV_SECTIONS.map((section, sectionIndex) => (
           <View key={section.title} className={cn(sectionIndex > 0 && 'mt-2')}>
-            {/* Section label — hidden when collapsed */}
             {!sidebarCollapsed && (
-              <Text className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-5 py-1">
+              <Text
+                className="text-xs font-semibold uppercase tracking-wider px-5 py-1"
+                style={{ color: '#5a5280' }}
+              >
                 {section.title}
               </Text>
             )}
@@ -110,20 +114,18 @@ export function Sidebar() {
                   onPress={() => router.push(item.href as any)}
                   className={cn(
                     'flex-row items-center gap-3 mx-2 px-3 py-2.5 rounded-lg',
-                    isActive ? 'bg-accent-900' : 'active:bg-surface-overlay',
                     sidebarCollapsed && 'justify-center',
                   )}
+                  style={isActive ? { backgroundColor: 'rgba(124,58,237,0.15)' } : undefined}
                 >
                   <item.Icon
                     size={18}
-                    color={isActive ? 'rgb(167,139,250)' : 'rgb(156,163,175)'}
+                    color={isActive ? '#a78bfa' : '#9ca3af'}
                   />
                   {!sidebarCollapsed && (
                     <Text
-                      className={cn(
-                        'text-sm font-medium',
-                        isActive ? 'text-accent-300' : 'text-gray-400',
-                      )}
+                      className="text-sm font-medium"
+                      style={{ color: isActive ? '#a78bfa' : '#8889a0' }}
                     >
                       {item.label}
                     </Text>

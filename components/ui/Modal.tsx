@@ -17,12 +17,18 @@ export function Modal({ title, onClose, children, visible, ...props }: ModalProp
       {...props}
     >
       <View className="flex-1 items-center justify-center bg-black/60 p-4">
-        <View className="w-full max-w-md rounded-2xl bg-surface-raised">
+        <View
+          className="w-full max-w-md rounded-2xl"
+          style={{ backgroundColor: '#1A1530', borderWidth: 1, borderColor: '#1e1a35' }}
+        >
           {title && (
-            <View className="flex-row items-center justify-between border-b border-border px-6 py-4">
-              <Text className="text-lg font-semibold text-gray-100">{title}</Text>
+            <View
+              className="flex-row items-center justify-between px-6 py-4"
+              style={{ borderBottomWidth: 1, borderBottomColor: '#1e1a35' }}
+            >
+              <Text className="text-lg font-semibold" style={{ color: '#f4f5fa' }}>{title}</Text>
               <Pressable onPress={onClose} className="p-1">
-                <X size={20} color="rgb(156, 163, 175)" />
+                <X size={20} color="#9ca3af" />
               </Pressable>
             </View>
           )}

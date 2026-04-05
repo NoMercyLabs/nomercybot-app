@@ -47,6 +47,7 @@ export interface GetUsersParams {
   search?: string
   page?: number
   take?: number
+  role?: 'follower' | 'subscriber' | 'vip' | 'moderator'
 }
 
 export interface GetBansParams {

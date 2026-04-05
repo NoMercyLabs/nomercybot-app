@@ -8,10 +8,10 @@ export default function NotFoundScreen() {
   return (
     <>
       <Stack.Screen options={{ title: t('errors.notFound') }} />
-      <View className="flex-1 items-center justify-center bg-surface">
-        <Text className="text-2xl font-bold text-gray-100 mb-2">{t('errors.notFound')}</Text>
-        <Text className="text-gray-400 mb-6">{t('errors.notFoundMessage')}</Text>
-        <Link href="/(dashboard)" className="text-accent-400">
+      <View className="flex-1 items-center justify-center" style={{ backgroundColor: '#141125' }}>
+        <Text className="text-2xl font-bold mb-2" style={{ color: '#f4f5fa' }}>{t('errors.notFound')}</Text>
+        <Text className="mb-6" style={{ color: '#8889a0' }}>{t('errors.notFoundMessage')}</Text>
+        <Link href="/(dashboard)" style={{ color: '#a78bfa' }}>
           {t('errors.goHome')}
         </Link>
       </View>

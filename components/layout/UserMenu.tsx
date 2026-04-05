@@ -7,14 +7,17 @@ export function UserMenu() {
   const { user, logout } = useAuth()
 
   return (
-    <View className="flex-row items-center gap-3 px-4 py-3 border-t border-border">
-      <Avatar src={user?.profileImageUrl} name={user?.displayName} size="sm" />
+    <View
+      className="flex-row items-center gap-3 px-4 py-3"
+      style={{ borderTopWidth: 1, borderTopColor: '#1e1a35' }}
+    >
+      <Avatar src={user?.profileImageUrl ?? undefined} name={user?.displayName} size="sm" />
       <View className="flex-1">
-        <Text className="text-gray-200 text-sm font-medium">{user?.displayName}</Text>
-        <Text className="text-gray-500 text-xs">{user?.login}</Text>
+        <Text className="text-sm font-medium" style={{ color: '#e5e7eb' }}>{user?.displayName}</Text>
+        <Text className="text-xs" style={{ color: '#6b7280' }}>@{user?.username}</Text>
       </View>
       <Pressable onPress={logout} className="p-2">
-        <LogOut size={16} color="rgb(156, 163, 175)" />
+        <LogOut size={16} color="#9ca3af" />
       </Pressable>
     </View>
   )

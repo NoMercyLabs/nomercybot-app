@@ -1,17 +1,3 @@
-export interface Track {
-  id: string
-  title: string
-  artist: string
-  duration: number
-  coverUrl?: string
-  requestedBy?: string
-}
-
-export interface MusicQueue {
-  nowPlaying: Track | null
-  queue: Track[]
-}
-
 export interface NowPlaying {
   trackName: string
   artist: string
@@ -34,18 +20,13 @@ export interface QueueItem {
   requestedBy?: string
 }
 
-export interface HistoryItem {
-  trackName: string
-  artist: string
-  imageUrl?: string
-  playedAt: string
-  requestedBy?: string
-}
-
-export interface MusicSettings {
-  provider: string
-  requireSubToRequest: boolean
-  allowVoteSkip: boolean
+/** Matches MusicConfigDto from the backend */
+export interface MusicConfig {
+  isEnabled: boolean
+  preferredProvider: string
   maxQueueSize: number
   maxRequestsPerUser: number
+  allowYouTube: boolean
+  allowSpotify: boolean
+  minTrustLevel: string
 }

@@ -17,6 +17,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { ErrorBoundary } from '@/components/feedback/ErrorBoundary'
 import { useWidgets } from '../hooks/useWidgets'
 import { useToast } from '@/hooks/useToast'
+import { useBreakpoint } from '@/hooks/useBreakpoint'
 import { WIDGET_TYPE_LABELS, WIDGET_TYPE_DESCRIPTIONS, type WidgetType, type Widget } from '../types'
 import * as Clipboard from 'expo-clipboard'
 
@@ -66,15 +67,15 @@ function WidgetCard({ widget, onToggle, onDelete, onCopyUrl }: {
             <Icon size={20} color={color} />
           </View>
           <View className="flex-1 gap-0.5">
-            <Text className="text-sm font-semibold text-gray-100">{widget.name}</Text>
-            <Text className="text-xs text-gray-500">{WIDGET_TYPE_LABELS[widget.type]}</Text>
+            <Text className="text-sm font-semibold" style={{ color: '#f4f5fa' }}>{widget.name}</Text>
+            <Text className="text-xs" style={{ color: '#5a5280' }}>{WIDGET_TYPE_LABELS[widget.type]}</Text>
           </View>
           <Toggle value={widget.isEnabled} onValueChange={onToggle} />
         </View>
 
         {widget.overlayUrl && (
-          <View className="flex-row items-center gap-2 rounded-md bg-gray-800 px-3 py-2">
-            <Text className="flex-1 text-xs text-gray-400 font-mono" numberOfLines={1}>
+          <View className="flex-row items-center gap-2 rounded-md px-3 py-2" style={{ backgroundColor: '#231D42' }}>
+            <Text className="flex-1 text-xs font-mono" style={{ color: '#8889a0' }} numberOfLines={1}>
               {widget.overlayUrl}
             </Text>
             <Pressable onPress={onCopyUrl} className="p-1">
@@ -84,10 +85,15 @@ function WidgetCard({ widget, onToggle, onDelete, onCopyUrl }: {
         )}
 
         <View className="flex-row items-center gap-2">
-          <Badge
-            variant={widget.isEnabled ? 'success' : 'muted'}
-            label={widget.isEnabled ? 'Active' : 'Inactive'}
-          />
+          <Badge variant={widget.isEnabled ? 'success' : 'muted'} label={widget.isEnabled ? 'Active' : 'Inactive'} />
+          <View
+            className="px-2 py-0.5 rounded"
+            style={{ backgroundColor: widget.type === 'custom' ? 'rgba(107,114,128,0.2)' : 'rgba(124,58,237,0.15)' }}
+          >
+            <Text className="text-xs font-semibold" style={{ color: widget.type === 'custom' ? '#9ca3af' : '#a78bfa' }}>
+              {widget.type === 'custom' ? 'Custom' : 'Built-in'}
+            </Text>
+          </View>
           <View className="flex-1" />
           <Button
             variant="ghost"
@@ -119,7 +125,8 @@ function CreateWidgetModal({ visible, onClose, onCreate }: {
               <Pressable
                 key={type}
                 onPress={() => onCreate(type)}
-                className="flex-row items-center gap-3 rounded-xl border border-border p-3 active:bg-surface-overlay"
+                className="flex-row items-center gap-3 rounded-xl p-3"
+              style={{ borderWidth: 1, borderColor: '#1e1a35', backgroundColor: '#1A1530' }}
               >
                 <View
                   className="h-10 w-10 items-center justify-center rounded-xl"
@@ -128,10 +135,10 @@ function CreateWidgetModal({ visible, onClose, onCreate }: {
                   <Icon size={20} color={color} />
                 </View>
                 <View className="flex-1 gap-0.5">
-                  <Text className="text-sm font-semibold text-gray-200">
+                  <Text className="text-sm font-semibold text-white">
                     {WIDGET_TYPE_LABELS[type]}
                   </Text>
-                  <Text className="text-xs text-gray-500">
+                  <Text className="text-xs" style={{ color: '#5a5280' }}>
                     {WIDGET_TYPE_DESCRIPTIONS[type]}
                   </Text>
                 </View>
@@ -148,6 +155,7 @@ function CreateWidgetModal({ visible, onClose, onCreate }: {
 export function WidgetsScreen() {
   const { widgets, isLoading, isRefetching, refetch, createWidget, updateWidget, deleteWidget } = useWidgets()
   const toast = useToast()
+  const { isDesktop } = useBreakpoint()
   const [showCreate, setShowCreate] = useState(false)
 
   async function handleCreate(type: WidgetType) {
@@ -201,29 +209,42 @@ export function WidgetsScreen() {
 
   return (
     <ErrorBoundary>
-    <View className="flex-1 bg-gray-950">
+    <View className="flex-1" style={{ backgroundColor: '#141125' }}>
       <PageHeader
         title="Widgets"
-        subtitle={`${widgets.filter((w) => w.isEnabled).length} active overlays`}
+        subtitle="Manage overlay widgets"
         rightContent={
-          <Button
-            size="sm"
-            onPress={() => setShowCreate(true)}
-            leftIcon={<Plus size={14} color="white" />}
-            label="Add Widget"
-          />
+          <View className="flex-row gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              leftIcon={<ExternalLink size={13} color="#d1d5db" />}
+              label="Get Overlay URL"
+              onPress={() => {
+                if (widgets[0]?.overlayUrl) handleCopyUrl(widgets[0].overlayUrl)
+              }}
+            />
+            <Button
+              size="sm"
+              onPress={() => setShowCreate(true)}
+              leftIcon={<Plus size={14} color="white" />}
+              label="Add Widget"
+            />
+          </View>
         }
       />
 
       <ScrollView
         className="flex-1"
-        contentContainerClassName="px-4 py-4 gap-3"
+        contentContainerStyle={{ padding: 20, paddingBottom: 32, gap: 16 }}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
       >
         {isLoading ? (
-          <View className="gap-3">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-32 rounded-xl" />
+          <View className="flex-row flex-wrap gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <View key={i} style={{ flex: 1, minWidth: 260, maxWidth: 400 }}>
+                <Skeleton className="h-40 rounded-xl" />
+              </View>
             ))}
           </View>
         ) : widgets.length === 0 ? (
@@ -234,25 +255,48 @@ export function WidgetsScreen() {
             onAction={() => setShowCreate(true)}
           />
         ) : (
-          widgets.map((widget) => (
-            <WidgetCard
-              key={widget.id}
-              widget={widget}
-              onToggle={(enabled) => handleToggle(widget.id, enabled)}
-              onDelete={() => handleDelete(widget)}
-              onCopyUrl={() => widget.overlayUrl && handleCopyUrl(widget.overlayUrl)}
-            />
-          ))
+          <>
+            {widgets.length > 0 && widgets[0]?.overlayUrl && (
+              <View
+                className="rounded-xl p-3 flex-row items-center gap-3"
+                style={{ backgroundColor: '#1A1530', borderWidth: 1, borderColor: '#1e1a35' }}
+              >
+                <ExternalLink size={14} color="#5a5280" />
+                <Text className="text-xs font-mono flex-1" style={{ color: '#8889a0' }} numberOfLines={1}>
+                  {widgets[0].overlayUrl}
+                </Text>
+                <Pressable
+                  onPress={() => widgets[0]?.overlayUrl && handleCopyUrl(widgets[0].overlayUrl)}
+                  className="px-3 py-1.5 rounded-lg"
+                  style={{ backgroundColor: '#231D42', borderWidth: 1, borderColor: '#1e1a35' }}
+                >
+                  <Text className="text-xs font-medium" style={{ color: '#8889a0' }}>Copy</Text>
+                </Pressable>
+              </View>
+            )}
+            <View className="flex-row flex-wrap gap-4">
+              {widgets.map((widget) => (
+                <View key={widget.id} style={isDesktop ? { width: '31%' } : { flex: 1, minWidth: 260, maxWidth: 400 }}>
+                  <WidgetCard
+                    widget={widget}
+                    onToggle={(enabled) => handleToggle(widget.id, enabled)}
+                    onDelete={() => handleDelete(widget)}
+                    onCopyUrl={() => widget.overlayUrl && handleCopyUrl(widget.overlayUrl)}
+                  />
+                </View>
+              ))}
+            </View>
+          </>
         )}
 
         {widgets.length > 0 && (
-          <Card className="items-center gap-2 py-6">
-            <ExternalLink size={24} color="#5a5b72" />
-            <Text className="text-sm font-medium text-gray-300">OBS Setup</Text>
-            <Text className="text-xs text-center text-gray-500 px-4">
+          <View className="rounded-xl items-center gap-2 py-6 px-4" style={{ backgroundColor: '#1A1530', borderWidth: 1, borderColor: '#1e1a35' }}>
+            <ExternalLink size={24} color="#5a5280" />
+            <Text className="text-sm font-medium text-white">OBS Setup</Text>
+            <Text className="text-xs text-center px-4" style={{ color: '#5a5280' }}>
               Add widget overlay URLs as Browser Sources in OBS, Streamlabs, or any streaming software.
             </Text>
-          </Card>
+          </View>
         )}
       </ScrollView>
 

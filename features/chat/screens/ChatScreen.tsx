@@ -1,50 +1,51 @@
 import {
   View, Text, FlatList, TextInput, Pressable,
-  KeyboardAvoidingView, Platform, Modal,
+  KeyboardAvoidingView, Platform, Modal, ScrollView,
 } from 'react-native'
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { router } from 'expo-router'
 import { useChannelStore } from '@/stores/useChannelStore'
 import { useSignalR } from '@/hooks/useSignalR'
 import { useFeatureTranslation } from '@/hooks/useFeatureTranslation'
+import { useBreakpoint } from '@/hooks/useBreakpoint'
 import { apiClient } from '@/lib/api/client'
 import { PageHeader } from '@/components/layout/PageHeader'
-import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { Send, X, Ban, Clock, Trash2, Shield, ChevronDown } from 'lucide-react-native'
+import {
+  Send, X, Ban, Clock, Trash2, ChevronDown,
+  Users, MessageSquare, Shield, Settings,
+} from 'lucide-react-native'
 import { ErrorBoundary } from '@/components/feedback/ErrorBoundary'
+import { ChatMessage } from '../components/ChatMessage'
 import type { ChatMessagePayload } from '@/types/signalr'
 
 type ChatMsg = ChatMessagePayload & { _key: string; isDeleted?: boolean }
+type ChatFilter = 'emote' | 'sub' | 'slow'
 
-interface UserCardProps {
-  msg: ChatMsg
+interface UserPanelProps {
+  msg: ChatMsg | null
   onClose: () => void
   broadcasterId: string
 }
 
-function UserCard({ msg, onClose, broadcasterId }: UserCardProps) {
-  const [timeoutDuration, setTimeoutDuration] = useState('60')
+function UserPanel({ msg, onClose, broadcasterId }: UserPanelProps) {
+  const [timeoutDuration, setTimeoutDuration] = useState('600')
   const [reason, setReason] = useState('')
   const [loading, setLoading] = useState<string | null>(null)
 
   async function doAction(action: 'ban' | 'timeout' | 'delete') {
+    if (!msg) return
     setLoading(action)
     try {
       if (action === 'delete') {
-        await apiClient.delete(
-          `/api/${broadcasterId}/chat/messages/${(msg as any).id}`,
-          { data: { reason } },
-        )
+        await apiClient.delete(`/api/${broadcasterId}/chat/messages/${msg.id}`, { data: { reason } })
       } else if (action === 'ban') {
-        await apiClient.post(`/api/${broadcasterId}/chat/bans`, {
-          userId: msg.userId,
-          reason,
-        })
+        await apiClient.post(`/api/${broadcasterId}/chat/bans`, { userId: msg.userId, reason })
       } else {
         await apiClient.post(`/api/${broadcasterId}/chat/timeouts`, {
           userId: msg.userId,
-          duration: parseInt(timeoutDuration, 10) || 60,
+          duration: parseInt(timeoutDuration, 10) || 600,
           reason,
         })
       }
@@ -54,134 +55,196 @@ function UserCard({ msg, onClose, broadcasterId }: UserCardProps) {
     }
   }
 
-  const badgeVariant: Record<ChatMsg['userType'], 'muted' | 'success' | 'info' | 'warning' | 'danger'> = {
-    viewer: 'muted',
-    subscriber: 'success',
-    vip: 'info',
-    moderator: 'warning',
-    broadcaster: 'danger',
+  const roleColor: Record<string, string> = {
+    broadcaster: '#f59e0b',
+    moderator: '#22c55e',
+    vip: '#a78bfa',
+    subscriber: '#60a5fa',
+    viewer: '#8889a0',
   }
 
+  const recentMessages = msg ? [msg.message] : []
+
   return (
-    <View className="bg-gray-900 rounded-2xl overflow-hidden" style={{ width: 300 }}>
-      {/* Header */}
-      <View className="flex-row items-center justify-between px-4 py-3 border-b border-border">
-        <View className="gap-1">
-          <Text className="text-sm font-bold text-gray-100">{msg.displayName}</Text>
-          <View className="flex-row items-center gap-2">
-            <Text className="text-xs text-gray-500">@{msg.username}</Text>
-            <Badge variant={badgeVariant[msg.userType]} label={msg.userType} />
+    <View className="h-full" style={{ borderLeftWidth: 1, borderLeftColor: '#1e1a35' }}>
+      {msg ? (
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {/* User Header */}
+          <View
+            className="items-center px-4 py-6 gap-3"
+            style={{ borderBottomWidth: 1, borderBottomColor: '#1e1a35' }}
+          >
+            <View
+              className="h-14 w-14 rounded-full items-center justify-center"
+              style={{ backgroundColor: '#231D42' }}
+            >
+              <Text className="text-xl font-bold" style={{ color: '#a78bfa' }}>
+                {(msg.displayName ?? '?').charAt(0).toUpperCase()}
+              </Text>
+            </View>
+            <View className="items-center gap-1">
+              <Text className="text-base font-bold text-white">{msg.displayName}</Text>
+              <View
+                className="px-2 py-0.5 rounded"
+                style={{ backgroundColor: `${roleColor[msg.userType ?? 'viewer']}20` }}
+              >
+                <Text className="text-xs font-medium capitalize"
+                  style={{ color: roleColor[msg.userType ?? 'viewer'] }}>
+                  {msg.userType ?? 'viewer'}
+                </Text>
+              </View>
+            </View>
+            <Pressable
+              onPress={onClose}
+              className="absolute top-3 right-3 p-1.5 rounded-lg"
+              style={{ backgroundColor: '#231D42' }}
+            >
+              <X size={14} color="#8889a0" />
+            </Pressable>
           </View>
-        </View>
-        <Pressable onPress={onClose} className="p-1 rounded-lg active:bg-surface-overlay">
-          <X size={18} color="#8889a0" />
-        </Pressable>
-      </View>
 
-      {/* Last message */}
-      <View className="px-4 py-3 border-b border-border">
-        <Text className="text-xs text-gray-500 mb-1">Last message</Text>
-        <Text className="text-sm text-gray-300">{msg.message}</Text>
-      </View>
+          {/* Stats */}
+          <View style={{ borderBottomWidth: 1, borderBottomColor: '#1e1a35' }}>
+            {[
+              { label: 'Follow Age', value: '—' },
+              { label: 'Account Age', value: '—' },
+              { label: 'Messages', value: '—' },
+              { label: 'Watch Time', value: '—' },
+              { label: 'Commands Used', value: '—' },
+              { label: 'Timeouts', value: '0' },
+            ].map((row, i) => (
+              <View
+                key={row.label}
+                className="flex-row items-center justify-between px-4 py-2.5"
+                style={i > 0 ? { borderTopWidth: 1, borderTopColor: '#1e1a35' } : undefined}
+              >
+                <Text className="text-xs" style={{ color: '#5a5280' }}>{row.label}</Text>
+                <Text className="text-xs font-medium text-white">{row.value}</Text>
+              </View>
+            ))}
+          </View>
 
-      {/* Mod actions */}
-      <View className="px-4 py-3 gap-3">
-        <Text className="text-xs font-semibold uppercase text-gray-500">Moderation</Text>
-
-        <Input
-          placeholder="Reason (optional)"
-          value={reason}
-          onChangeText={setReason}
-        />
-
-        <View className="flex-row items-center gap-2">
-          <View className="flex-1">
+          {/* Mod Actions */}
+          <View className="px-4 py-3 gap-2.5" style={{ borderBottomWidth: 1, borderBottomColor: '#1e1a35' }}>
+            <Text className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#3d3566' }}>
+              Moderation
+            </Text>
             <Input
-              placeholder="Duration (sec)"
-              value={timeoutDuration}
-              onChangeText={setTimeoutDuration}
-              keyboardType="numeric"
+              placeholder="Reason (optional)"
+              value={reason}
+              onChangeText={setReason}
             />
+            <View className="flex-row gap-2">
+              <View className="flex-1">
+                <Input
+                  placeholder="Timeout (sec)"
+                  value={timeoutDuration}
+                  onChangeText={setTimeoutDuration}
+                  keyboardType="numeric"
+                />
+              </View>
+              <Button
+                variant="secondary"
+                size="sm"
+                loading={loading === 'timeout'}
+                onPress={() => doAction('timeout')}
+                leftIcon={<Clock size={13} color="#f59e0b" />}
+                label="Timeout"
+              />
+            </View>
+            <Pressable
+              onPress={() => doAction('ban')}
+              className="flex-row items-center justify-center gap-2 rounded-lg py-2.5"
+              style={{ backgroundColor: 'rgba(239,68,68,0.15)', borderWidth: 1, borderColor: 'rgba(239,68,68,0.3)' }}
+            >
+              <Ban size={14} color="#ef4444" />
+              <Text className="text-sm font-medium" style={{ color: '#ef4444' }}>
+                {loading === 'ban' ? 'Banning...' : 'Ban User'}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => doAction('delete')}
+              className="flex-row items-center justify-center gap-2 rounded-lg py-2.5"
+              style={{ backgroundColor: '#1A1530', borderWidth: 1, borderColor: '#1e1a35' }}
+            >
+              <Trash2 size={14} color="#8889a0" />
+              <Text className="text-sm font-medium" style={{ color: '#8889a0' }}>
+                {loading === 'delete' ? 'Deleting...' : 'Delete Message'}
+              </Text>
+            </Pressable>
           </View>
-          <Button
-            variant="secondary"
-            size="sm"
-            loading={loading === 'timeout'}
-            onPress={() => doAction('timeout')}
-            leftIcon={<Clock size={14} color="#f59e0b" />}
-            label="Timeout"
-          />
-        </View>
 
-        <View className="flex-row gap-2">
-          <Button
-            variant="danger"
-            size="sm"
-            loading={loading === 'ban'}
-            onPress={() => doAction('ban')}
-            leftIcon={<Ban size={14} color="white" />}
-            label="Ban"
-            className="flex-1"
-          />
-          <Button
-            variant="secondary"
-            size="sm"
-            loading={loading === 'delete'}
-            onPress={() => doAction('delete')}
-            leftIcon={<Trash2 size={14} color="#ef4444" />}
-            label="Delete"
-            className="flex-1"
-          />
+          {/* Recent Messages */}
+          <View className="px-4 py-3 gap-2">
+            <Text className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#3d3566' }}>
+              Recent Messages
+            </Text>
+            <View
+              className="rounded-lg p-3"
+              style={{ backgroundColor: '#1A1530', borderWidth: 1, borderColor: '#1e1a35' }}
+            >
+              <Text className="text-sm text-white">{msg.message}</Text>
+            </View>
+          </View>
+        </ScrollView>
+      ) : (
+        <View className="flex-1 items-center justify-center gap-2 px-4">
+          <MessageSquare size={32} color="#2e2757" />
+          <Text className="text-sm text-center" style={{ color: '#3d3566' }}>
+            Click a message to view user details
+          </Text>
         </View>
-      </View>
+      )}
     </View>
   )
-}
-
-const USER_BADGE_COLORS: Record<string, string> = {
-  broadcaster: '#ef4444',
-  moderator: '#00ad03',
-  vip: '#e005b9',
-  subscriber: '#8b5cf6',
 }
 
 export function ChatScreen() {
   const { t } = useFeatureTranslation('chat')
   const broadcasterId = useChannelStore((s) => s.currentChannel?.broadcasterId)
+  const viewerCount = useChannelStore((s) => s.currentChannel?.viewerCount ?? 0)
   const [messages, setMessages] = useState<ChatMsg[]>([])
   const [input, setInput] = useState('')
   const [selectedMsg, setSelectedMsg] = useState<ChatMsg | null>(null)
   const [showScrollBtn, setShowScrollBtn] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
+  const [activeFilters, setActiveFilters] = useState<Set<ChatFilter>>(new Set())
+  const [chattersPerMin, setChattersPerMin] = useState(0)
   const listRef = useRef<FlatList>(null)
-  const { on, off, connect, invoke } = useSignalR()
+  const { on, off, connect, invoke, status } = useSignalR()
+  const { isDesktop } = useBreakpoint()
 
   useEffect(() => {
     connect()
   }, [connect])
 
   useEffect(() => {
+    if (status !== 'connected' || !broadcasterId) return
+    invoke('JoinChannel', broadcasterId).catch(() => {})
+    return () => {
+      invoke('LeaveChannel', broadcasterId).catch(() => {})
+    }
+  }, [status, broadcasterId, invoke])
+
+  useEffect(() => {
     on('ChatMessage', (msg) => {
       if (!isPaused) {
-        setMessages((prev) => {
-          const next = [...prev.slice(-299), { ...msg, _key: `${msg.userId}-${msg.timestamp}` }]
-          return next
-        })
+        setMessages((prev) => [
+          ...prev.slice(-299),
+          { ...msg, _key: msg.id ?? `${msg.userId}-${msg.timestamp}` },
+        ])
       }
     })
-
     on('MessageDeleted', ({ messageId }) => {
       setMessages((prev) =>
-        prev.map((m) => (m._key.includes(messageId) ? { ...m, isDeleted: true } : m)),
+        prev.map((m) => (m.id === messageId ? { ...m, isDeleted: true } : m)),
       )
     })
-
     on('UserBanned', ({ userId }) => {
       setMessages((prev) =>
         prev.map((m) => (m.userId === userId ? { ...m, isDeleted: true } : m)),
       )
     })
-
     return () => {
       off('ChatMessage')
       off('MessageDeleted')
@@ -204,20 +267,127 @@ export function ChatScreen() {
     setIsPaused(false)
   }
 
-  return (
-    <ErrorBoundary>
+  function toggleFilter(f: ChatFilter) {
+    setActiveFilters((prev) => {
+      const next = new Set(prev)
+      if (next.has(f)) next.delete(f)
+      else next.add(f)
+      return next
+    })
+  }
+
+  // Track messages per minute
+  const messageTimestamps = useRef<number[]>([])
+  useEffect(() => {
+    if (messages.length === 0) return
+    const now = Date.now()
+    messageTimestamps.current.push(now)
+    // Keep only last 60 seconds
+    messageTimestamps.current = messageTimestamps.current.filter(t => now - t < 60_000)
+    setChattersPerMin(messageTimestamps.current.length)
+  }, [messages])
+
+  const isConnected = status === 'connected'
+
+  const chatPanel = (
     <KeyboardAvoidingView
-      className="flex-1 bg-gray-950"
+      className="flex-1 flex-col"
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <PageHeader title={t('title') as string} />
+      {/* Viewers Bar */}
+      <View
+        className="flex-row items-center justify-between px-4 py-2"
+        style={{ borderBottomWidth: 1, borderBottomColor: '#1e1a35' }}
+      >
+        <View className="flex-row items-center gap-2">
+          <View className="flex-row items-center gap-1.5">
+            <View className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isConnected ? '#22c55e' : '#ef4444' }} />
+            <Text className="text-xs font-semibold" style={{ color: isConnected ? '#22c55e' : '#ef4444' }}>
+              {isConnected ? 'Live' : 'Offline'}
+            </Text>
+          </View>
+          <Text className="text-xs" style={{ color: '#3d3566' }}>·</Text>
+          <Text className="text-xs font-medium" style={{ color: '#8889a0' }}>
+            {viewerCount.toLocaleString()} viewers
+          </Text>
+          <Text className="text-xs" style={{ color: '#3d3566' }}>·</Text>
+          <Text className="text-xs font-medium" style={{ color: '#8889a0' }}>
+            {chattersPerMin} chatters/min
+          </Text>
+        </View>
+        <View className="flex-row items-center gap-3">
+          {/* Filter pills */}
+          {([
+            { key: 'emote' as ChatFilter, label: 'Emote Only' },
+            { key: 'sub' as ChatFilter, label: 'Sub Only' },
+            { key: 'slow' as ChatFilter, label: 'Slow Mode' },
+          ] as const).map(({ key, label }) => {
+            const active = activeFilters.has(key)
+            return (
+              <Pressable
+                key={key}
+                onPress={() => toggleFilter(key)}
+                className="px-2.5 py-1 rounded-full"
+                style={{
+                  backgroundColor: active ? 'rgba(124,58,237,0.25)' : 'transparent',
+                  borderWidth: 1,
+                  borderColor: active ? '#7C3AED' : '#2a2545',
+                }}
+              >
+                <Text className="text-xs" style={{ color: active ? '#a78bfa' : '#5a5280' }}>
+                  {label}
+                </Text>
+              </Pressable>
+            )
+          })}
+          <Pressable onPress={() => router.push('/(dashboard)/chat/settings' as any)}>
+            <Settings size={14} color="#5a5280" />
+          </Pressable>
+        </View>
+      </View>
 
+      {/* Connection status — only when not connected */}
+      {status !== 'connected' && (
+        <View
+          className="flex-row items-center justify-center gap-2 py-1.5"
+          style={{
+            backgroundColor: status === 'connecting' || status === 'reconnecting'
+              ? 'rgba(245,158,11,0.15)'
+              : 'rgba(239,68,68,0.15)',
+          }}
+        >
+          <View
+            className="w-1.5 h-1.5 rounded-full"
+            style={{
+              backgroundColor: status === 'connecting' || status === 'reconnecting'
+                ? '#f59e0b'
+                : '#ef4444',
+            }}
+          />
+          <Text
+            className="text-xs"
+            style={{
+              color: status === 'connecting' || status === 'reconnecting'
+                ? '#f59e0b'
+                : '#ef4444',
+            }}
+          >
+            {status === 'connecting'
+              ? 'Connecting…'
+              : status === 'reconnecting'
+                ? 'Reconnecting…'
+                : 'Disconnected'}
+          </Text>
+        </View>
+      )}
+
+      {/* Messages */}
       <FlatList
         ref={listRef}
         data={messages}
         keyExtractor={(m) => m._key}
         className="flex-1"
-        contentContainerClassName="px-4 py-2"
+        contentContainerStyle={{ paddingHorizontal: 8, paddingVertical: 8 }}
         onScrollBeginDrag={() => setIsPaused(true)}
         onEndReached={() => {
           setShowScrollBtn(false)
@@ -226,50 +396,45 @@ export function ChatScreen() {
         onEndReachedThreshold={0.1}
         ListEmptyComponent={
           <View className="items-center py-12">
-            <Text className="text-sm text-gray-600">{t('empty') as string}</Text>
+            <Text className="text-sm" style={{ color: '#3d3566' }}>{t('empty') as string}</Text>
           </View>
         }
         renderItem={({ item }) => (
           <Pressable
+            onPress={() => !item.isDeleted && setSelectedMsg(item)}
             onLongPress={() => !item.isDeleted && setSelectedMsg(item)}
-            className="flex-row gap-2 py-0.5"
           >
-            <Text
-              className="text-xs font-bold shrink-0"
-              style={{ color: item.isDeleted ? '#374151' : (item.colorHex ?? '#a855f7') }}
-            >
-              {item.username}:
-            </Text>
-            {item.isDeleted ? (
-              <Text className="flex-1 text-xs text-gray-700 italic">
-                [message deleted]
-              </Text>
-            ) : (
-              <Text className="flex-1 text-xs text-gray-300 leading-5">
-                {item.message}
-              </Text>
-            )}
+            <ChatMessage message={item} isDeleted={item.isDeleted} />
           </Pressable>
         )}
       />
 
-      {/* Scroll to bottom button */}
       {showScrollBtn && (
         <Pressable
           onPress={scrollToBottom}
-          className="absolute bottom-20 right-4 flex-row items-center gap-1 rounded-full bg-accent-600 px-3 py-1.5 shadow-lg"
+          className="absolute bottom-16 right-4 flex-row items-center gap-1 rounded-full px-3 py-1.5"
+          style={{ backgroundColor: '#7C3AED' }}
         >
           <ChevronDown size={14} color="white" />
           <Text className="text-xs font-medium text-white">New messages</Text>
         </Pressable>
       )}
 
-      {/* Input */}
-      <View className="flex-row items-center gap-2 border-t border-gray-800 px-4 py-3">
+      {/* Input bar */}
+      <View
+        className="flex-row items-center gap-2.5 px-4 py-3"
+        style={{ borderTopWidth: 1, borderTopColor: '#1e1a35', backgroundColor: '#1A1530' }}
+      >
         <TextInput
-          className="flex-1 rounded-lg bg-gray-800 px-3 py-2 text-sm text-white"
+          className="flex-1 rounded-lg px-3 py-2.5 text-sm text-white"
+          style={{
+            backgroundColor: '#231D42',
+            borderWidth: 1,
+            borderColor: '#1e1a35',
+            outlineStyle: 'none',
+          } as any}
           placeholder={t('placeholder') as string}
-          placeholderTextColor="#4b5563"
+          placeholderTextColor="#3d3566"
           value={input}
           onChangeText={setInput}
           returnKeyType="send"
@@ -277,35 +442,72 @@ export function ChatScreen() {
         />
         <Pressable
           onPress={handleSend}
-          className="rounded-lg bg-accent-600 p-2.5 active:bg-accent-700"
+          className="rounded-lg p-2.5 items-center justify-center"
+          style={{ backgroundColor: '#7C3AED' }}
         >
           <Send size={16} color="white" />
         </Pressable>
       </View>
+    </KeyboardAvoidingView>
+  )
 
-      {/* User card modal */}
-      <Modal
-        visible={!!selectedMsg}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setSelectedMsg(null)}
-      >
-        <Pressable
-          className="flex-1 items-center justify-center bg-black/60 px-4"
-          onPress={() => setSelectedMsg(null)}
-        >
-          <Pressable onPress={(e) => e.stopPropagation()}>
-            {selectedMsg && (
-              <UserCard
+  return (
+    <ErrorBoundary>
+      <View className="flex-1" style={{ backgroundColor: '#141125' }}>
+        <PageHeader
+          title={t('title') as string}
+          subtitle="Live chat view"
+        />
+
+        {isDesktop ? (
+          // Desktop: 2-panel layout
+          <View className="flex-1 flex-row">
+            {/* Chat panel */}
+            <View className="flex-1 flex-col">
+              {chatPanel}
+            </View>
+            {/* User panel */}
+            <View style={{ width: 320, backgroundColor: '#0F0D1E' }}>
+              <UserPanel
                 msg={selectedMsg}
                 onClose={() => setSelectedMsg(null)}
                 broadcasterId={broadcasterId ?? ''}
               />
-            )}
-          </Pressable>
-        </Pressable>
-      </Modal>
-    </KeyboardAvoidingView>
+            </View>
+          </View>
+        ) : (
+          // Mobile: chat only, modal for user card
+          <>
+            {chatPanel}
+            <Modal
+              visible={!!selectedMsg}
+              transparent
+              animationType="fade"
+              onRequestClose={() => setSelectedMsg(null)}
+            >
+              <Pressable
+                className="flex-1 items-center justify-center px-4"
+                style={{ backgroundColor: 'rgba(0,0,0,0.75)' }}
+                onPress={() => setSelectedMsg(null)}
+              >
+                <Pressable
+                  onPress={(e) => e.stopPropagation()}
+                  className="w-full rounded-2xl overflow-hidden"
+                  style={{ maxWidth: 360, backgroundColor: '#1A1530', borderWidth: 1, borderColor: '#1e1a35' }}
+                >
+                  {selectedMsg && (
+                    <UserPanel
+                      msg={selectedMsg}
+                      onClose={() => setSelectedMsg(null)}
+                      broadcasterId={broadcasterId ?? ''}
+                    />
+                  )}
+                </Pressable>
+              </Pressable>
+            </Modal>
+          </>
+        )}
+      </View>
     </ErrorBoundary>
   )
 }

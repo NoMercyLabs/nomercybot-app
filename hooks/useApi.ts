@@ -26,7 +26,7 @@ export function useApiQuery<T>(
     queryKey,
     queryFn: async () => {
       const res = await apiClient.get<ApiResponse<T>>(
-        `/v1/channels/${channelId}${path}`,
+        `/api/v1/channels/${channelId}${path}`,
       )
       return res.data.data
     },
@@ -48,7 +48,7 @@ export function usePaginatedQuery<T>(
     queryKey,
     queryFn: async () => {
       const res = await apiClient.get<PaginatedResponse<T>>(
-        `/v1/channels/${channelId}${path}`,
+        `/api/v1/channels/${channelId}${path}`,
         { params: { page, pageSize } },
       )
       return res.data
@@ -74,12 +74,12 @@ export function useApiMutation<TData, TVariables>(
 
   return useMutation<TData, ApiError, TVariables>({
     mutationFn: async (variables) => {
-      const url = `/v1/channels/${channelId}${path}`
-      const res = await (
-        method === 'delete'
-          ? (apiClient.delete as (url: string) => Promise<{ data: ApiResponse<TData> }>)(url)
-          : (apiClient[method] as (url: string, data?: unknown) => Promise<{ data: ApiResponse<TData> }>)(url, variables)
-      )
+      const url = `/api/v1/channels/${channelId}${path}`
+      if (method === 'delete') {
+        await apiClient.delete(url)
+        return undefined as TData
+      }
+      const res = await (apiClient[method] as (url: string, data?: unknown) => Promise<{ data: ApiResponse<TData> }>)(url, variables)
       return res.data.data
     },
     onSuccess: (data) => {

@@ -9,6 +9,9 @@ export default function CallbackScreen() {
   const router = useRouter()
   const { t } = useTranslation('common')
   const params = useLocalSearchParams<{
+    access_token?: string
+    refresh_token?: string
+    expires_in?: string
     code?: string
     state?: string
     token?: string
@@ -32,12 +35,15 @@ export default function CallbackScreen() {
         return
       }
 
-      if (!params.token && !params.code) {
+      if (!params.access_token && !params.token && !params.code) {
         setErrorMessage('No authentication data received.')
         return
       }
 
       const success = await handleCallback({
+        access_token: params.access_token,
+        refresh_token: params.refresh_token,
+        expires_in: params.expires_in,
         token: params.token,
         code: params.code,
         state: params.state,
@@ -56,21 +62,29 @@ export default function CallbackScreen() {
     }
 
     processCallback()
-  }, [handleCallback, onboardingComplete, params.code, params.error, params.error_description, params.scope, params.state, params.token, router])
+  }, [handleCallback, onboardingComplete, params.access_token, params.code, params.error, params.error_description, params.expires_in, params.refresh_token, params.scope, params.state, params.token, router])
 
   if (errorMessage) {
     return (
-      <View className="flex-1 items-center justify-center bg-surface px-6 gap-6">
+      <View className="flex-1 items-center justify-center px-6 gap-6" style={{ backgroundColor: '#141125' }}>
         <View className="w-full max-w-sm items-center gap-4">
-          <Text className="text-2xl font-bold text-gray-100">Sign in failed</Text>
-          <View className="w-full rounded-xl bg-red-500/10 border border-red-500/30 px-4 py-3">
-            <Text className="text-red-400 text-sm text-center">{errorMessage}</Text>
+          <Text className="text-2xl font-bold" style={{ color: '#f4f5fa' }}>Sign in failed</Text>
+          <View
+            className="w-full rounded-xl px-4 py-3"
+            style={{
+              backgroundColor: 'rgba(239,68,68,0.1)',
+              borderWidth: 1,
+              borderColor: 'rgba(239,68,68,0.3)',
+            }}
+          >
+            <Text className="text-sm text-center" style={{ color: '#f87171' }}>{errorMessage}</Text>
           </View>
           <Pressable
             onPress={() => router.replace('/(auth)/login')}
-            className="w-full rounded-xl bg-surface-raised py-4 items-center active:opacity-80"
+            className="w-full rounded-xl py-4 items-center active:opacity-80"
+            style={{ backgroundColor: '#1A1530' }}
           >
-            <Text className="text-gray-100 font-semibold">Back to Login</Text>
+            <Text className="font-semibold" style={{ color: '#f4f5fa' }}>Back to Login</Text>
           </Pressable>
         </View>
       </View>
@@ -78,12 +92,12 @@ export default function CallbackScreen() {
   }
 
   return (
-    <View className="flex-1 items-center justify-center bg-surface gap-6">
+    <View className="flex-1 items-center justify-center gap-6" style={{ backgroundColor: '#141125' }}>
       <View className="gap-3 items-center">
         <Skeleton className="h-12 w-12 rounded-full" />
         <Skeleton className="h-4 w-40 rounded-lg" />
       </View>
-      <Text className="text-gray-400 text-sm">{t('auth.signingIn', 'Signing you in...')}</Text>
+      <Text className="text-sm" style={{ color: '#8889a0' }}>{t('auth.signingIn', 'Signing you in...')}</Text>
     </View>
   )
 }

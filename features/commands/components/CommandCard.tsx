@@ -15,19 +15,19 @@ export function CommandCard({ command, onEdit, onDelete }: CommandCardProps) {
     <Card className="flex-row items-center justify-between p-4">
       <View className="flex-1 gap-1">
         <View className="flex-row items-center gap-2">
-          <Text className="text-gray-100 font-medium">!{command.name}</Text>
+          <Text className="font-medium" style={{ color: '#f4f5fa' }}>!{command.name}</Text>
           {!command.isEnabled && <Badge label="Disabled" variant="secondary" />}
           <Badge label={command.permission} variant="default" />
         </View>
-        <Text className="text-gray-400 text-sm" numberOfLines={1}>{command.response}</Text>
-        <Text className="text-gray-600 text-xs">Cooldown: {command.cooldown}s</Text>
+        <Text className="text-sm" style={{ color: '#8889a0' }} numberOfLines={1}>{command.response}</Text>
+        <Text className="text-xs" style={{ color: '#5a5280' }}>Cooldown: {command.cooldownSeconds}s</Text>
       </View>
       <View className="flex-row gap-1">
-        <Pressable onPress={onEdit} className="p-2 rounded-lg active:bg-surface-overlay">
-          <Edit size={16} color="rgb(156,163,175)" />
+        <Pressable onPress={onEdit} className="p-2 rounded-lg">
+          <Edit size={16} color="#9ca3af" />
         </Pressable>
-        <Pressable onPress={onDelete} className="p-2 rounded-lg active:bg-surface-overlay">
-          <Trash2 size={16} color="rgb(239,68,68)" />
+        <Pressable onPress={onDelete} className="p-2 rounded-lg">
+          <Trash2 size={16} color="#ef4444" />
         </Pressable>
       </View>
     </Card>

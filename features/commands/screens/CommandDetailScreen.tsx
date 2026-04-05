@@ -63,7 +63,7 @@ export function CommandDetailScreen() {
 
   return (
     <ErrorBoundary>
-    <ScrollView className="flex-1 bg-gray-950" contentContainerClassName="p-4 gap-4">
+    <ScrollView className="flex-1" style={{ backgroundColor: '#141125' }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 32 }}>
       <PageHeader
         title={isNew ? 'New Command' : name}
         showBack
@@ -128,8 +128,11 @@ export function CommandDetailScreen() {
         )}
       />
 
-      <View className="flex-row items-center justify-between rounded-lg bg-gray-900 border border-gray-800 px-4 py-3">
-        <Text className="text-sm text-gray-300">{t('form.enabled')}</Text>
+      <View
+        className="flex-row items-center justify-between rounded-lg px-4 py-3"
+        style={{ backgroundColor: '#1A1530', borderWidth: 1, borderColor: '#1e1a35' }}
+      >
+        <Text className="text-sm" style={{ color: '#cdcede' }}>{t('form.enabled')}</Text>
         <Controller
           control={control}
           name="enabled"

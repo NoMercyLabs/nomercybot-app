@@ -16,8 +16,7 @@ export function ToastProvider({ children }: ToastProviderProps) {
       {children}
       <View
         className="absolute left-4 right-4 gap-2 z-50"
-        style={{ bottom: insets.bottom + 16 }}
-        pointerEvents="box-none"
+        style={{ bottom: insets.bottom + 16, pointerEvents: 'box-none' }}
       >
         {toasts.map((toast) => (
           <Toast key={toast.id} toast={toast} onDismiss={removeToast} />

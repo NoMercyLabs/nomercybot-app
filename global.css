@@ -9,7 +9,7 @@
   --font-sans: Inter, system-ui, sans-serif;
   --font-mono: JetBrains Mono, Fira Code, monospace;
 
-  /* Accent palette */
+  /* Accent palette (Purple) */
   --color-accent-50:  #ede9fe;
   --color-accent-100: #ddd6fe;
   --color-accent-200: #c4b5fd;
@@ -22,20 +22,22 @@
   --color-accent-900: #40197e;
   --color-accent-950: #2b0c59;
 
-  /* Surface colors */
-  --color-surface:         #111827;
-  --color-surface-raised:  #1f2937;
-  --color-surface-overlay: #374151;
-  --color-border:          #4b5563;
+  /* Dark purple surface system */
+  --color-bg:              #0D0B1A;
+  --color-sidebar:         #0F0D1E;
+  --color-surface:         #141125;
+  --color-surface-raised:  #1A1530;
+  --color-surface-overlay: #231D42;
+  --color-border:          #1e1a35;
 
-  /* Gray scale */
-  --color-gray-950: #0a0b0f;
-  --color-gray-900: #111218;
-  --color-gray-850: #16171f;
-  --color-gray-800: #1e1f2a;
-  --color-gray-700: #2a2b3a;
-  --color-gray-600: #3a3b4f;
-  --color-gray-500: #5a5b72;
+  /* Gray scale (purple-tinted dark) */
+  --color-gray-950: #0D0B1A;
+  --color-gray-900: #141125;
+  --color-gray-850: #1A1530;
+  --color-gray-800: #231D42;
+  --color-gray-700: #2e2757;
+  --color-gray-600: #3d3566;
+  --color-gray-500: #5a5280;
   --color-gray-400: #8889a0;
   --color-gray-300: #aaabbe;
   --color-gray-200: #cdcede;
@@ -47,5 +49,5 @@
   --color-warning: #f59e0b;
   --color-danger:  #ef4444;
   --color-info:    #3b82f6;
-  --color-live:    #ef4444;
+  --color-live:    #22c55e;
 }

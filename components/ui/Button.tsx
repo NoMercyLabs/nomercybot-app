@@ -16,19 +16,19 @@ export interface ButtonProps extends PressableProps {
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary: 'bg-accent-600 active:bg-accent-700',
-  secondary: 'bg-surface-overlay border border-border active:bg-surface-raised',
+  primary: 'bg-[#7C3AED] active:bg-[#6D28D9]',
+  secondary: 'bg-[#231D42] border border-[#1e1a35] active:bg-[#1A1530]',
   danger: 'bg-red-700 active:bg-red-800',
-  ghost: 'active:bg-surface-overlay',
-  outline: 'border border-gray-600 active:bg-surface-overlay',
+  ghost: 'active:bg-[#231D42]',
+  outline: 'border border-[#4b5563] active:bg-[#231D42]',
 }
 
 const textStyles: Record<ButtonVariant, string> = {
   primary: 'text-white',
-  secondary: 'text-gray-200',
+  secondary: 'text-[#e5e7eb]',
   danger: 'text-white',
-  ghost: 'text-gray-300',
-  outline: 'text-gray-200',
+  ghost: 'text-[#d1d5db]',
+  outline: 'text-[#e5e7eb]',
 }
 
 const sizeStyles: Record<ButtonSize, string> = {

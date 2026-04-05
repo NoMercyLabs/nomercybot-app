@@ -14,7 +14,8 @@ export interface Widget {
   type: WidgetType
   isEnabled: boolean
   overlayUrl?: string
-  config: Record<string, unknown>
+  settings: Record<string, unknown>
+  eventSubscriptions: string[]
   createdAt: string
   updatedAt: string
 }
@@ -22,10 +23,14 @@ export interface Widget {
 export interface WidgetCreate {
   name: string
   type: WidgetType
-  config?: Record<string, unknown>
+  settings?: Record<string, unknown>
+  eventSubscriptions?: string[]
 }
 
-export interface WidgetUpdate extends Partial<WidgetCreate> {
+export interface WidgetUpdate {
+  name?: string
+  settings?: Record<string, unknown>
+  eventSubscriptions?: string[]
   isEnabled?: boolean
 }
 

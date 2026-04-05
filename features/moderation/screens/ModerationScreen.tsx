@@ -9,6 +9,7 @@ import { ErrorBoundary } from '@/components/feedback/ErrorBoundary'
 import { useState, useEffect } from 'react'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { apiClient } from '@/lib/api/client'
 import {
   Link2,
   Type,
@@ -21,10 +22,9 @@ import {
   Trash,
   ShieldOff,
   ShieldCheck,
+  Shield,
 } from 'lucide-react-native'
 import { PageHeader } from '@/components/layout/PageHeader'
-import { Tabs } from '@/components/ui/Tabs'
-import { Card } from '@/components/ui/Card'
 import { Toggle } from '@/components/ui/Toggle'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
@@ -36,61 +36,29 @@ import { useNotificationStore } from '@/stores/useNotificationStore'
 import { moderationApi } from '../api'
 import type { AutomodConfig, ModerationBan, ModLogEntry, ModLogAction } from '../types'
 
-// ─── Form shape wraps string arrays into objects for useFieldArray ────────────
-
-interface DomainItem {
-  value: string
-}
-
-interface PhraseItem {
-  value: string
-}
-
+interface DomainItem { value: string }
+interface PhraseItem { value: string }
 interface AutomodFormValues {
-  linkFilter: {
-    enabled: boolean
-    whitelist: DomainItem[]
-  }
-  capsFilter: {
-    enabled: boolean
-    threshold: number
-  }
-  bannedPhrases: {
-    enabled: boolean
-    phrases: PhraseItem[]
-  }
-  emoteSpam: {
-    enabled: boolean
-    maxEmotes: number
-  }
+  linkFilter: { enabled: boolean; whitelist: DomainItem[] }
+  capsFilter: { enabled: boolean; threshold: number }
+  bannedPhrases: { enabled: boolean; phrases: PhraseItem[] }
+  emoteSpam: { enabled: boolean; maxEmotes: number }
 }
 
 function configToForm(cfg: AutomodConfig): AutomodFormValues {
   return {
-    linkFilter: {
-      enabled: cfg.linkFilter.enabled,
-      whitelist: cfg.linkFilter.whitelist.map((v) => ({ value: v })),
-    },
+    linkFilter: { enabled: cfg.linkFilter.enabled, whitelist: cfg.linkFilter.whitelist.map((v) => ({ value: v })) },
     capsFilter: cfg.capsFilter,
-    bannedPhrases: {
-      enabled: cfg.bannedPhrases.enabled,
-      phrases: cfg.bannedPhrases.phrases.map((v) => ({ value: v })),
-    },
+    bannedPhrases: { enabled: cfg.bannedPhrases.enabled, phrases: cfg.bannedPhrases.phrases.map((v) => ({ value: v })) },
     emoteSpam: cfg.emoteSpam,
   }
 }
 
 function formToConfig(form: AutomodFormValues): AutomodConfig {
   return {
-    linkFilter: {
-      enabled: form.linkFilter.enabled,
-      whitelist: form.linkFilter.whitelist.map((d) => d.value),
-    },
+    linkFilter: { enabled: form.linkFilter.enabled, whitelist: form.linkFilter.whitelist.map((d) => d.value) },
     capsFilter: form.capsFilter,
-    bannedPhrases: {
-      enabled: form.bannedPhrases.enabled,
-      phrases: form.bannedPhrases.phrases.map((p) => p.value),
-    },
+    bannedPhrases: { enabled: form.bannedPhrases.enabled, phrases: form.bannedPhrases.phrases.map((p) => p.value) },
     emoteSpam: form.emoteSpam,
   }
 }
@@ -102,7 +70,24 @@ const DEFAULT_FORM: AutomodFormValues = {
   emoteSpam: { enabled: false, maxEmotes: 10 },
 }
 
-// ─── AutoMod Tab ────────────────────────────────────────────────────────────
+function StatCard({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <View
+      className="flex-1 rounded-xl px-4 py-3 gap-1"
+      style={{
+        backgroundColor: '#1A1530',
+        borderWidth: 1,
+        borderColor: '#1e1a35',
+        borderLeftWidth: 3,
+        borderLeftColor: color,
+        minWidth: 120,
+      }}
+    >
+      <Text className="text-xl font-bold text-white">{value}</Text>
+      <Text className="text-xs" style={{ color: '#5a5280' }}>{label}</Text>
+    </View>
+  )
+}
 
 function AutoModTab() {
   const channelId = useChannelStore((s) => s.currentChannel?.id)
@@ -125,7 +110,6 @@ function AutoModTab() {
 
   const { fields: whitelistFields, append: appendDomain, remove: removeDomain } =
     useFieldArray({ control, name: 'linkFilter.whitelist' })
-
   const { fields: phraseFields, append: appendPhrase, remove: removePhrase } =
     useFieldArray({ control, name: 'bannedPhrases.phrases' })
 
@@ -177,213 +161,95 @@ function AutoModTab() {
   return (
     <ScrollView
       className="flex-1"
-      contentContainerClassName="p-4 gap-4"
+      contentContainerStyle={{ padding: 16, gap: 12 }}
       refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
     >
-      {/* Link Filter */}
-      <Card className="p-4 gap-4">
-        <View className="flex-row items-center gap-3 mb-1">
-          <Link2 size={18} color="#a78bfa" />
-          <Text className="text-base font-semibold text-white flex-1">Link Filter</Text>
-        </View>
-        <Controller
-          control={control}
-          name="linkFilter.enabled"
-          render={({ field }) => (
-            <Toggle
-              value={field.value}
-              onValueChange={field.onChange}
-              label="Block links in chat"
-            />
-          )}
-        />
-        {linkEnabled && (
-          <View className="gap-3 mt-1">
-            <Text className="text-sm font-medium text-gray-300">Whitelisted Domains</Text>
+      {[
+        { icon: <Link2 size={16} color="#a78bfa" />, title: 'Link Filter', controlName: 'linkFilter.enabled' as const, enabled: linkEnabled, extra: linkEnabled ? (
+          <View className="gap-2.5 mt-1">
+            <Text className="text-xs font-medium" style={{ color: '#8889a0' }}>Whitelisted Domains</Text>
             {whitelistFields.map((field, i) => (
               <View key={field.id} className="flex-row items-center gap-2">
-                <Controller
-                  control={control}
-                  name={`linkFilter.whitelist.${i}.value`}
+                <Controller control={control} name={`linkFilter.whitelist.${i}.value`}
                   render={({ field: f }) => (
                     <View className="flex-1">
-                      <Input
-                        value={f.value}
-                        onChangeText={f.onChange}
-                        placeholder="e.g. twitch.tv"
-                        autoCapitalize="none"
-                      />
+                      <Input value={f.value} onChangeText={f.onChange} placeholder="e.g. twitch.tv" autoCapitalize="none" />
                     </View>
                   )}
                 />
-                <Pressable
-                  onPress={() => removeDomain(i)}
-                  className="p-2 rounded-lg active:bg-surface-overlay"
-                >
-                  <Trash2 size={15} color="#ef4444" />
+                <Pressable onPress={() => removeDomain(i)} className="p-2 rounded-lg" style={{ backgroundColor: '#231D42' }}>
+                  <Trash2 size={14} color="#ef4444" />
                 </Pressable>
               </View>
             ))}
             <View className="flex-row items-center gap-2">
               <View className="flex-1">
-                <Input
-                  value={newDomain}
-                  onChangeText={setNewDomain}
-                  placeholder="Add domain..."
-                  autoCapitalize="none"
-                  onSubmitEditing={handleAddDomain}
-                />
+                <Input value={newDomain} onChangeText={setNewDomain} placeholder="Add domain..." autoCapitalize="none" onSubmitEditing={handleAddDomain} />
               </View>
-              <Button
-                variant="secondary"
-                size="sm"
-                onPress={handleAddDomain}
-                leftIcon={<Plus size={14} color="#a78bfa" />}
-                label="Add"
-              />
+              <Button variant="secondary" size="sm" onPress={handleAddDomain} leftIcon={<Plus size={13} color="#a78bfa" />} label="Add" />
             </View>
           </View>
-        )}
-      </Card>
-
-      {/* Caps Filter */}
-      <Card className="p-4 gap-4">
-        <View className="flex-row items-center gap-3 mb-1">
-          <Type size={18} color="#f59e0b" />
-          <Text className="text-base font-semibold text-white flex-1">Caps Filter</Text>
-        </View>
-        <Controller
-          control={control}
-          name="capsFilter.enabled"
-          render={({ field }) => (
-            <Toggle
-              value={field.value}
-              onValueChange={field.onChange}
-              label="Block excessive caps"
-            />
-          )}
-        />
-        {capsEnabled && (
-          <Controller
-            control={control}
-            name="capsFilter.threshold"
+        ) : null },
+        { icon: <Type size={16} color="#f59e0b" />, title: 'Caps Filter', controlName: 'capsFilter.enabled' as const, enabled: capsEnabled, extra: capsEnabled ? (
+          <Controller control={control} name="capsFilter.threshold"
             render={({ field }) => (
-              <View className="gap-1.5">
-                <Text className="text-sm text-gray-400">
+              <View className="gap-1.5 mt-1">
+                <Text className="text-sm" style={{ color: '#8889a0' }}>
                   Block if more than{' '}
-                  <Text className="text-accent-400 font-semibold">{field.value}%</Text> of message
-                  is caps (0–100)
+                  <Text style={{ color: '#a78bfa', fontWeight: '600' }}>{field.value}%</Text> of message is caps
                 </Text>
-                <Input
-                  value={String(field.value)}
-                  onChangeText={(v) => {
-                    const n = parseInt(v, 10)
-                    if (!isNaN(n)) field.onChange(Math.min(100, Math.max(0, n)))
-                  }}
-                  keyboardType="numeric"
-                  placeholder="70"
-                />
+                <Input value={String(field.value)} onChangeText={(v) => { const n = parseInt(v, 10); if (!isNaN(n)) field.onChange(Math.min(100, Math.max(0, n))) }} keyboardType="numeric" placeholder="70" />
               </View>
             )}
           />
-        )}
-      </Card>
-
-      {/* Banned Phrases */}
-      <Card className="p-4 gap-4">
-        <View className="flex-row items-center gap-3 mb-1">
-          <MessageSquareX size={18} color="#ef4444" />
-          <Text className="text-base font-semibold text-white flex-1">Banned Phrases</Text>
-        </View>
-        <Controller
-          control={control}
-          name="bannedPhrases.enabled"
-          render={({ field }) => (
-            <Toggle
-              value={field.value}
-              onValueChange={field.onChange}
-              label="Block banned phrases"
-            />
-          )}
-        />
-        {phrasesEnabled && (
-          <View className="gap-3 mt-1">
+        ) : null },
+        { icon: <MessageSquareX size={16} color="#ef4444" />, title: 'Banned Phrases', controlName: 'bannedPhrases.enabled' as const, enabled: phrasesEnabled, extra: phrasesEnabled ? (
+          <View className="gap-2.5 mt-1">
             {phraseFields.map((field, i) => (
               <View key={field.id} className="flex-row items-center gap-2">
-                <Controller
-                  control={control}
-                  name={`bannedPhrases.phrases.${i}.value`}
-                  render={({ field: f }) => (
-                    <View className="flex-1">
-                      <Input value={f.value} onChangeText={f.onChange} placeholder="Phrase..." />
-                    </View>
-                  )}
+                <Controller control={control} name={`bannedPhrases.phrases.${i}.value`}
+                  render={({ field: f }) => (<View className="flex-1"><Input value={f.value} onChangeText={f.onChange} placeholder="Phrase..." /></View>)}
                 />
-                <Pressable
-                  onPress={() => removePhrase(i)}
-                  className="p-2 rounded-lg active:bg-surface-overlay"
-                >
-                  <Trash2 size={15} color="#ef4444" />
+                <Pressable onPress={() => removePhrase(i)} className="p-2 rounded-lg" style={{ backgroundColor: '#231D42' }}>
+                  <Trash2 size={14} color="#ef4444" />
                 </Pressable>
               </View>
             ))}
             <View className="flex-row items-center gap-2">
               <View className="flex-1">
-                <Input
-                  value={newPhrase}
-                  onChangeText={setNewPhrase}
-                  placeholder="Add a banned phrase..."
-                  onSubmitEditing={handleAddPhrase}
-                />
+                <Input value={newPhrase} onChangeText={setNewPhrase} placeholder="Add a banned phrase..." onSubmitEditing={handleAddPhrase} />
               </View>
-              <Button
-                variant="secondary"
-                size="sm"
-                onPress={handleAddPhrase}
-                leftIcon={<Plus size={14} color="#a78bfa" />}
-                label="Add"
-              />
+              <Button variant="secondary" size="sm" onPress={handleAddPhrase} leftIcon={<Plus size={13} color="#a78bfa" />} label="Add" />
             </View>
           </View>
-        )}
-      </Card>
-
-      {/* Emote Spam */}
-      <Card className="p-4 gap-4">
-        <View className="flex-row items-center gap-3 mb-1">
-          <Smile size={18} color="#10b981" />
-          <Text className="text-base font-semibold text-white flex-1">Emote Spam</Text>
-        </View>
-        <Controller
-          control={control}
-          name="emoteSpam.enabled"
-          render={({ field }) => (
-            <Toggle
-              value={field.value}
-              onValueChange={field.onChange}
-              label="Block emote spam"
-            />
-          )}
-        />
-        {emoteEnabled && (
-          <Controller
-            control={control}
-            name="emoteSpam.maxEmotes"
+        ) : null },
+        { icon: <Smile size={16} color="#10b981" />, title: 'Emote Spam', controlName: 'emoteSpam.enabled' as const, enabled: emoteEnabled, extra: emoteEnabled ? (
+          <Controller control={control} name="emoteSpam.maxEmotes"
             render={({ field }) => (
-              <Input
-                label="Max emotes per message"
-                value={String(field.value)}
-                onChangeText={(v) => {
-                  const n = parseInt(v, 10)
-                  if (!isNaN(n)) field.onChange(Math.max(1, n))
-                }}
-                keyboardType="numeric"
-                placeholder="10"
-              />
+              <Input label="Max emotes per message" value={String(field.value)} onChangeText={(v) => { const n = parseInt(v, 10); if (!isNaN(n)) field.onChange(Math.max(1, n)) }} keyboardType="numeric" placeholder="10" />
             )}
           />
-        )}
-      </Card>
+        ) : null },
+      ].map((section) => (
+        <View
+          key={section.title}
+          className="rounded-xl p-4 gap-3"
+          style={{ backgroundColor: '#1A1530', borderWidth: 1, borderColor: '#1e1a35' }}
+        >
+          <View className="flex-row items-center gap-2.5">
+            {section.icon}
+            <Text className="text-sm font-semibold text-white flex-1">{section.title}</Text>
+          </View>
+          <Controller
+            control={control}
+            name={section.controlName}
+            render={({ field }) => (
+              <Toggle value={field.value} onValueChange={field.onChange} label={`Enable ${section.title}`} />
+            )}
+          />
+          {section.extra}
+        </View>
+      ))}
 
       <Button
         label="Save AutoMod Settings"
@@ -394,8 +260,6 @@ function AutoModTab() {
     </ScrollView>
   )
 }
-
-// ─── Bans Tab ────────────────────────────────────────────────────────────────
 
 function BansTab() {
   const channelId = useChannelStore((s) => s.currentChannel?.id)
@@ -429,53 +293,39 @@ function BansTab() {
     <>
       <ScrollView
         className="flex-1"
-        contentContainerClassName="p-4 gap-3"
+        contentContainerStyle={{ padding: 16, gap: 12 }}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
       >
         {isLoading ? (
           <View className="gap-3">
-            <Skeleton className="h-20" />
-            <Skeleton className="h-20" />
-            <Skeleton className="h-20" />
-            <Skeleton className="h-20" />
+            {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-20" />)}
           </View>
         ) : bans.length === 0 ? (
-          <EmptyState
-            icon={<Ban size={40} color="#6b7280" />}
-            title="No banned users"
-            message="Banned users will appear here."
-          />
+          <EmptyState icon={<Ban size={40} color="#3d3566" />} title="No banned users" message="Banned users will appear here." />
         ) : (
           bans.map((ban) => (
-            <Card key={ban.userId} className="p-4 gap-2">
+            <View
+              key={ban.userId}
+              className="rounded-xl p-4 gap-2"
+              style={{ backgroundColor: '#1A1530', borderWidth: 1, borderColor: '#1e1a35' }}
+            >
               <View className="flex-row items-start gap-3">
-                <View className="h-9 w-9 items-center justify-center rounded-full bg-red-950">
+                <View className="h-9 w-9 items-center justify-center rounded-full" style={{ backgroundColor: 'rgba(239,68,68,0.15)' }}>
                   <Ban size={16} color="#ef4444" />
                 </View>
                 <View className="flex-1 gap-0.5">
-                  <Text className="text-sm font-semibold text-gray-100">{ban.username}</Text>
-                  {ban.reason ? (
-                    <Text className="text-xs text-gray-400" numberOfLines={2}>
-                      {ban.reason}
-                    </Text>
-                  ) : null}
-                  <Text className="text-xs text-gray-500">
-                    Banned by {ban.bannedBy} •{' '}
-                    {new Date(ban.bannedAt).toLocaleDateString()}
+                  <Text className="text-sm font-semibold text-white">{ban.username}</Text>
+                  {ban.reason ? <Text className="text-xs" style={{ color: '#8889a0' }} numberOfLines={2}>{ban.reason}</Text> : null}
+                  <Text className="text-xs" style={{ color: '#5a5280' }}>
+                    Banned by {ban.bannedBy} · {new Date(ban.bannedAt).toLocaleDateString()}
                   </Text>
                 </View>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  label="Unban"
-                  onPress={() => setConfirmUnban(ban)}
-                />
+                <Button variant="outline" size="sm" label="Unban" onPress={() => setConfirmUnban(ban)} />
               </View>
-            </Card>
+            </View>
           ))
         )}
       </ScrollView>
-
       <ConfirmDialog
         visible={!!confirmUnban}
         title="Unban User"
@@ -488,20 +338,11 @@ function BansTab() {
   )
 }
 
-// ─── Log Tab ─────────────────────────────────────────────────────────────────
-
-interface ActionCfg {
-  label: string
-  color: string
-  bgColor: string
-  Icon: typeof Ban
-}
-
-const ACTION_CONFIG: Record<ModLogAction, ActionCfg> = {
-  ban: { label: 'Ban', color: '#ef4444', bgColor: '#450a0a', Icon: Ban },
-  unban: { label: 'Unban', color: '#22c55e', bgColor: '#052e16', Icon: ShieldCheck },
-  timeout: { label: 'Timeout', color: '#f97316', bgColor: '#431407', Icon: Clock },
-  delete: { label: 'Delete', color: '#eab308', bgColor: '#422006', Icon: Trash },
+const ACTION_CONFIG: Record<ModLogAction, { label: string; color: string; bgColor: string; Icon: typeof Ban }> = {
+  ban:     { label: 'Ban',     color: '#ef4444', bgColor: 'rgba(239,68,68,0.15)',   Icon: Ban },
+  unban:   { label: 'Unban',   color: '#22c55e', bgColor: 'rgba(34,197,94,0.15)',   Icon: ShieldCheck },
+  timeout: { label: 'Timeout', color: '#f97316', bgColor: 'rgba(249,115,22,0.15)',  Icon: Clock },
+  delete:  { label: 'Delete',  color: '#eab308', bgColor: 'rgba(234,179,8,0.15)',   Icon: Trash },
 }
 
 function ModLogTab() {
@@ -521,93 +362,57 @@ function ModLogTab() {
 
   useEffect(() => {
     if (!pageResult) return
-    if (page === 1) {
-      setEntries(pageResult.data)
-    } else {
-      setEntries((prev) => [...prev, ...pageResult.data])
-    }
-    setHasMore(pageResult.page < pageResult.totalPages)
+    if (page === 1) setEntries(pageResult.data)
+    else setEntries((prev) => [...prev, ...pageResult.data])
+    setHasMore(pageResult.hasMore)
   }, [pageResult, page])
 
-  // Fix stale closure: use an effect watching page so that when page resets to 1
-  // via handleRefresh, the refetch fires after the new page value is committed.
   useEffect(() => {
-    if (page === 1) {
-      refetch()
-    }
+    if (page === 1) refetch()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page])
-
-  function handleRefresh() {
-    setEntries([])
-    setHasMore(false)
-    setPage(1) // triggers the useEffect above to refetch with page=1
-  }
-
-  function handleLoadMore() {
-    setPage((p) => p + 1)
-  }
 
   return (
     <ScrollView
       className="flex-1"
-      contentContainerClassName="p-4 gap-3"
-      refreshControl={<RefreshControl refreshing={isLoading && page === 1} onRefresh={handleRefresh} tintColor="#a855f7" />}
+      contentContainerStyle={{ padding: 16, gap: 10 }}
+      refreshControl={<RefreshControl refreshing={isLoading && page === 1} onRefresh={() => { setEntries([]); setHasMore(false); setPage(1) }} tintColor="#a855f7" />}
     >
       {isLoading && page === 1 ? (
         <View className="gap-3">
-          <Skeleton className="h-16" />
-          <Skeleton className="h-16" />
-          <Skeleton className="h-16" />
-          <Skeleton className="h-16" />
-          <Skeleton className="h-16" />
-          <Skeleton className="h-16" />
+          {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-16" />)}
         </View>
       ) : entries.length === 0 ? (
-        <EmptyState
-          icon={<ShieldOff size={40} color="#6b7280" />}
-          title="No mod log entries"
-          message="Moderation actions will appear here."
-        />
+        <EmptyState icon={<ShieldOff size={40} color="#3d3566" />} title="No mod log entries" message="Moderation actions will appear here." />
       ) : (
         <>
           {entries.map((entry) => {
             const cfg = ACTION_CONFIG[entry.action] ?? ACTION_CONFIG.ban
             const { Icon } = cfg
             return (
-              <Card key={entry.id} className="p-3">
+              <View
+                key={entry.id}
+                className="rounded-xl p-3"
+                style={{ backgroundColor: '#1A1530', borderWidth: 1, borderColor: '#1e1a35' }}
+              >
                 <View className="flex-row items-center gap-3">
-                  <View
-                    className="h-8 w-8 items-center justify-center rounded-lg"
-                    style={{ backgroundColor: cfg.bgColor }}
-                  >
-                    <Icon size={15} color={cfg.color} />
+                  <View className="h-8 w-8 items-center justify-center rounded-lg" style={{ backgroundColor: cfg.bgColor }}>
+                    <Icon size={14} color={cfg.color} />
                   </View>
                   <View className="flex-1 gap-0.5">
                     <View className="flex-row items-center gap-2 flex-wrap">
-                      <Text style={{ color: cfg.color }} className="text-xs font-bold uppercase">
-                        {cfg.label}
-                      </Text>
-                      <Text className="text-sm font-semibold text-gray-200">{entry.target}</Text>
-                      <Text className="text-xs text-gray-500">by {entry.moderator}</Text>
+                      <Text style={{ color: cfg.color }} className="text-xs font-bold uppercase">{cfg.label}</Text>
+                      <Text className="text-sm font-semibold text-white">{entry.target}</Text>
+                      <Text className="text-xs" style={{ color: '#5a5280' }}>by {entry.moderator}</Text>
                     </View>
-                    {entry.reason ? (
-                      <Text className="text-xs text-gray-400" numberOfLines={1}>
-                        {entry.reason}
-                      </Text>
-                    ) : null}
-                    {entry.duration != null ? (
-                      <Text className="text-xs text-gray-500">{entry.duration}s timeout</Text>
-                    ) : null}
+                    {entry.reason ? <Text className="text-xs" style={{ color: '#8889a0' }} numberOfLines={1}>{entry.reason}</Text> : null}
+                    {entry.duration != null ? <Text className="text-xs" style={{ color: '#5a5280' }}>{entry.duration}s timeout</Text> : null}
                   </View>
-                  <Text className="text-xs text-gray-600">
-                    {new Date(entry.timestamp).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
+                  <Text className="text-xs" style={{ color: '#3d3566' }}>
+                    {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </Text>
                 </View>
-              </Card>
+              </View>
             )
           })}
           {hasMore && (
@@ -615,7 +420,7 @@ function ModLogTab() {
               label={isFetching ? 'Loading...' : 'Load more'}
               variant="secondary"
               loading={isFetching && page > 1}
-              onPress={handleLoadMore}
+              onPress={() => setPage((p) => p + 1)}
               className="mt-2"
             />
           )}
@@ -625,28 +430,262 @@ function ModLogTab() {
   )
 }
 
-// ─── ModerationScreen ────────────────────────────────────────────────────────
+function BlockedTermsTab() {
+  const channelId = useChannelStore((s) => s.currentChannel?.id)
+  const addToast = useNotificationStore((s) => s.addToast)
+  const queryClient = useQueryClient()
+  const [newTerm, setNewTerm] = useState('')
+
+  const { data: terms = [], isLoading, refetch, isRefetching } = useQuery<string[]>({
+    queryKey: ['channel', channelId, 'blocked-terms'],
+    queryFn: () =>
+      apiClient
+        .get<{ data: string[] }>(`/api/v1/channels/${channelId}/moderation/blocked-terms`)
+        .then((r) => r.data.data),
+    enabled: !!channelId,
+  })
+
+  const addMutation = useMutation({
+    mutationFn: (term: string) =>
+      apiClient.post(`/api/v1/channels/${channelId}/moderation/blocked-terms`, { term }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['channel', channelId, 'blocked-terms'] })
+      addToast('success', 'Term blocked')
+      setNewTerm('')
+    },
+    onError: () => addToast('error', 'Failed to add blocked term'),
+  })
+
+  const removeMutation = useMutation({
+    mutationFn: (term: string) =>
+      apiClient.delete(`/api/v1/channels/${channelId}/moderation/blocked-terms/${encodeURIComponent(term)}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['channel', channelId, 'blocked-terms'] })
+      addToast('success', 'Term removed')
+    },
+  })
+
+  return (
+    <ScrollView
+      className="flex-1"
+      contentContainerStyle={{ padding: 16, gap: 12 }}
+      refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
+    >
+      <View className="flex-row gap-2">
+        <View className="flex-1">
+          <Input
+            placeholder="Add blocked term or phrase..."
+            value={newTerm}
+            onChangeText={setNewTerm}
+            onSubmitEditing={() => newTerm.trim() && addMutation.mutate(newTerm.trim())}
+          />
+        </View>
+        <Button
+          variant="secondary"
+          size="sm"
+          loading={addMutation.isPending}
+          onPress={() => newTerm.trim() && addMutation.mutate(newTerm.trim())}
+          leftIcon={<Plus size={13} color="#a78bfa" />}
+          label="Add"
+        />
+      </View>
+      {isLoading ? (
+        <View className="gap-2">
+          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-10" />)}
+        </View>
+      ) : terms.length === 0 ? (
+        <EmptyState
+          icon={<MessageSquareX size={36} color="#3d3566" />}
+          title="No blocked terms"
+          message="Add words or phrases to block them from chat."
+        />
+      ) : (
+        terms.map((term) => (
+          <View
+            key={term}
+            className="flex-row items-center justify-between rounded-lg px-3 py-2.5"
+            style={{ backgroundColor: '#141125', borderWidth: 1, borderColor: '#1e1a35' }}
+          >
+            <Text className="text-sm text-white font-mono">{term}</Text>
+            <Pressable
+              onPress={() => removeMutation.mutate(term)}
+              className="p-1.5 rounded-lg"
+              style={{ backgroundColor: '#231D42' }}
+            >
+              <Trash2 size={13} color="#ef4444" />
+            </Pressable>
+          </View>
+        ))
+      )}
+    </ScrollView>
+  )
+}
+
+function SuspiciousUsersTab() {
+  return (
+    <View className="flex-1 items-center justify-center py-16 gap-2">
+      <Shield size={36} color="#3d3566" />
+      <Text className="text-sm" style={{ color: '#3d3566' }}>No suspicious users detected</Text>
+      <Text className="text-xs text-center" style={{ color: '#2e2757' }}>
+        Users flagged by Twitch's suspicious user system will appear here
+      </Text>
+    </View>
+  )
+}
+
+function SharedBansTab() {
+  return (
+    <View className="flex-1 items-center justify-center py-16 gap-2">
+      <Shield size={36} color="#3d3566" />
+      <Text className="text-sm" style={{ color: '#3d3566' }}>No shared bans configured</Text>
+      <Text className="text-xs text-center" style={{ color: '#2e2757' }}>
+        Import ban lists from other channels to keep your community safe
+      </Text>
+    </View>
+  )
+}
+
+interface ModerationStats {
+  bansToday: number
+  timeouts: number
+  deletedMessages: number
+  automodActions: number
+}
 
 export function ModerationScreen() {
   const [tab, setTab] = useState('automod')
+  const channelId = useChannelStore((s) => s.currentChannel?.id)
+  const queryClient = useQueryClient()
+  const addToast = useNotificationStore((s) => s.addToast)
 
-  const tabs = [
-    { key: 'automod', label: 'AutoMod' },
-    { key: 'bans', label: 'Bans' },
-    { key: 'log', label: 'Mod Log' },
+  const { data: shieldData } = useQuery<{ enabled: boolean }>({
+    queryKey: ['channel', channelId, 'shield-mode'],
+    queryFn: () => moderationApi.getShieldMode(channelId!),
+    enabled: !!channelId,
+  })
+  const shieldMode = shieldData?.enabled ?? false
+
+  const shieldMutation = useMutation({
+    mutationFn: (enabled: boolean) => moderationApi.setShieldMode(channelId!, enabled),
+    onMutate: async (enabled) => {
+      await queryClient.cancelQueries({ queryKey: ['channel', channelId, 'shield-mode'] })
+      const prev = queryClient.getQueryData(['channel', channelId, 'shield-mode'])
+      queryClient.setQueryData(['channel', channelId, 'shield-mode'], { enabled })
+      return { prev }
+    },
+    onError: (_err, _vars, ctx) => {
+      queryClient.setQueryData(['channel', channelId, 'shield-mode'], ctx?.prev)
+      addToast('error', 'Failed to toggle Shield Mode')
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['channel', channelId, 'shield-mode'] })
+    },
+  })
+
+  const { data: modStats } = useQuery<ModerationStats>({
+    queryKey: ['channel', channelId, 'moderation-stats'],
+    queryFn: () =>
+      apiClient
+        .get<{ data: ModerationStats }>(`/v1/channels/${channelId}/moderation/stats`)
+        .then((r) => r.data.data),
+    enabled: !!channelId,
+    refetchInterval: 60_000,
+  })
+
+  const TABS = [
+    { key: 'bans', label: 'Banned Users' },
+    { key: 'blocked', label: 'Blocked Terms' },
+    { key: 'automod', label: 'AutoMod Settings' },
+    { key: 'shared', label: 'Shared Bans' },
   ]
 
   return (
     <ErrorBoundary>
-      <View className="flex-1 bg-gray-950">
-        <View className="px-4 pt-4">
-          <PageHeader title="Moderation" />
+      <ScrollView
+        className="flex-1"
+        style={{ backgroundColor: '#141125' }}
+        contentContainerStyle={{ paddingBottom: 32 }}
+        nestedScrollEnabled
+      >
+        <PageHeader
+          title="Moderation"
+          subtitle="Manage chat moderation, bans, and AutoMod settings"
+        />
+
+        <View className="px-5 py-4 gap-4">
+          {/* Shield Banner */}
+          <View
+            className="rounded-xl flex-row items-center gap-4 px-5 py-4"
+            style={{
+              backgroundColor: shieldMode ? 'rgba(124,58,237,0.1)' : '#1A1530',
+              borderWidth: 1,
+              borderColor: shieldMode ? 'rgba(124,58,237,0.3)' : '#1e1a35',
+            }}
+          >
+            <View
+              className="h-12 w-12 rounded-xl items-center justify-center"
+              style={{ backgroundColor: shieldMode ? 'rgba(124,58,237,0.2)' : '#231D42' }}
+            >
+              <Shield size={24} color={shieldMode ? '#a78bfa' : '#3d3566'} />
+            </View>
+            <View className="flex-1 gap-0.5">
+              <Text className="text-base font-semibold text-white">Shield Mode</Text>
+              <Text className="text-xs leading-5" style={{ color: '#8889a0' }}>
+                Emergency mode — restricts chat to subscribers only, enables maximum AutoMod
+              </Text>
+            </View>
+            <Toggle
+              value={shieldMode}
+              onValueChange={(v) => shieldMutation.mutate(v)}
+            />
+          </View>
+
+          {/* Stat cards */}
+          <View className="flex-row flex-wrap gap-4">
+            <StatCard label="Bans Today" value={modStats?.bansToday ?? 0} color="#ef4444" />
+            <StatCard label="Timeouts" value={modStats?.timeouts ?? 0} color="#f59e0b" />
+            <StatCard label="Deleted Messages" value={modStats?.deletedMessages ?? 0} color="#eab308" />
+            <StatCard label="AutoMod Actions" value={modStats?.automodActions ?? 0} color="#3b82f6" />
+          </View>
+
+          {/* Tab bar + content */}
+          <View
+            className="rounded-xl overflow-hidden"
+            style={{ backgroundColor: '#1A1530', borderWidth: 1, borderColor: '#1e1a35' }}
+          >
+            <View
+              className="flex-row"
+              style={{ borderBottomWidth: 1, borderBottomColor: '#1e1a35' }}
+            >
+              {TABS.map((t) => (
+                <Pressable
+                  key={t.key}
+                  onPress={() => setTab(t.key)}
+                  className="px-4 py-3"
+                  style={{
+                    borderBottomWidth: 2,
+                    borderBottomColor: tab === t.key ? '#7C3AED' : 'transparent',
+                  }}
+                >
+                  <Text
+                    className="text-sm font-medium"
+                    style={{ color: tab === t.key ? '#a78bfa' : '#5a5280' }}
+                  >
+                    {t.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <View style={{ minHeight: 400 }}>
+              {tab === 'bans' && <BansTab />}
+              {tab === 'blocked' && <BlockedTermsTab />}
+              {tab === 'automod' && <AutoModTab />}
+              {tab === 'shared' && <SharedBansTab />}
+            </View>
+          </View>
         </View>
-        <Tabs tabs={tabs} activeTab={tab} onTabChange={setTab} className="px-2" />
-        {tab === 'automod' && <AutoModTab />}
-        {tab === 'bans' && <BansTab />}
-        {tab === 'log' && <ModLogTab />}
-      </View>
+      </ScrollView>
     </ErrorBoundary>
   )
 }

@@ -36,15 +36,22 @@ export class ErrorBoundary extends Component<Props, State> {
       if (this.props.fallback) return this.props.fallback
 
       return (
-        <View className="flex-1 items-center justify-center bg-gray-950 px-8 gap-4">
-          <View className="h-14 w-14 rounded-2xl bg-red-900/30 items-center justify-center">
+        <View
+          className="flex-1 items-center justify-center px-8 gap-4"
+          style={{ backgroundColor: '#141125' }}
+        >
+          <View
+            className="h-14 w-14 rounded-2xl items-center justify-center"
+            style={{ backgroundColor: 'rgba(239,68,68,0.2)' }}
+          >
             <AlertTriangle size={28} color="#ef4444" />
           </View>
-          <Text className="text-lg font-bold text-gray-100">Something went wrong</Text>
-          <Text className="text-sm text-gray-500 text-center leading-5">{this.state.message}</Text>
+          <Text className="text-lg font-bold" style={{ color: '#f4f5fa' }}>Something went wrong</Text>
+          <Text className="text-sm text-center leading-5" style={{ color: '#6b7280' }}>{this.state.message}</Text>
           <Pressable
             onPress={this.reset}
-            className="mt-2 rounded-xl bg-accent-600 px-6 py-3 active:bg-accent-700"
+            className="mt-2 rounded-xl px-6 py-3"
+            style={{ backgroundColor: '#7C3AED' }}
           >
             <Text className="text-white font-semibold">Try again</Text>
           </Pressable>

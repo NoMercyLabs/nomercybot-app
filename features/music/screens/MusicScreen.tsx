@@ -6,12 +6,13 @@ import {
   Pressable,
   TextInput,
   RefreshControl,
+  ScrollView,
 } from 'react-native'
+import { useBreakpoint } from '@/hooks/useBreakpoint'
 import { ErrorBoundary } from '@/components/feedback/ErrorBoundary'
 import { Image } from 'expo-image'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { formatDistanceToNow } from 'date-fns'
-import { Play, Pause, SkipForward, SkipBack, Volume2, Music2, X } from 'lucide-react-native'
+import { Play, Pause, SkipForward, Volume2, Music2, X } from 'lucide-react-native'
 import { useChannelStore } from '@/stores/useChannelStore'
 import { useFeatureTranslation } from '@/hooks/useFeatureTranslation'
 import { PageHeader } from '@/components/layout/PageHeader'
@@ -23,12 +24,13 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import {
   getNowPlaying,
   getQueue,
-  getHistory,
-  controlPlayback,
+  skipTrack,
+  pauseTrack,
+  resumeTrack,
   addToQueue,
   removeFromQueue,
 } from '../api'
-import type { NowPlaying, QueueItem, HistoryItem } from '../types'
+import type { NowPlaying, QueueItem } from '../types'
 
 const fmtDuration = (ms: number) => {
   const s = Math.floor(ms / 1000)
@@ -51,22 +53,23 @@ function NowPlayingCard({
   isLoading,
 }: {
   channelId: string
-  np: NowPlaying | undefined
+  np: NowPlaying | null | undefined
   isLoading: boolean
 }) {
   const qc = useQueryClient()
 
-  const control = useMutation({
-    mutationFn: ({
-      action,
-      value,
-    }: {
-      action: 'play' | 'pause' | 'skip' | 'previous' | 'volume'
-      value?: number
-    }) => controlPlayback(channelId, action, value),
+  const skipMutation = useMutation({
+    mutationFn: () => skipTrack(channelId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['music', 'now-playing', channelId] })
       qc.invalidateQueries({ queryKey: ['music', 'queue', channelId] })
+    },
+  })
+
+  const toggleMutation = useMutation({
+    mutationFn: () => (np?.isPlaying ? pauseTrack(channelId) : resumeTrack(channelId)),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['music', 'now-playing', channelId] })
     },
   })
 
@@ -79,7 +82,7 @@ function NowPlayingCard({
       {isLoading ? (
         <Skeleton className="h-32 w-32 rounded-xl" />
       ) : (
-        <View className="h-32 w-32 rounded-xl bg-gray-800 items-center justify-center overflow-hidden">
+        <View className="h-32 w-32 rounded-xl items-center justify-center overflow-hidden" style={{ backgroundColor: '#1A1530' }}>
           {np?.imageUrl ? (
             <Image
               source={{ uri: np.imageUrl }}
@@ -104,13 +107,13 @@ function NowPlayingCard({
             {np?.trackName ?? 'Nothing playing'}
           </Text>
           {np?.artist ? (
-            <Text className="text-sm text-gray-400" numberOfLines={1}>
+            <Text className="text-sm" style={{ color: '#8889a0' }} numberOfLines={1}>
               {np.artist}
               {np.album ? ` · ${np.album}` : ''}
             </Text>
           ) : null}
           {np?.requestedBy ? (
-            <Text className="text-xs text-gray-600 mt-0.5">
+            <Text className="text-xs mt-0.5" style={{ color: '#5a5280' }}>
               Requested by {np.requestedBy}
             </Text>
           ) : null}
@@ -119,17 +122,17 @@ function NowPlayingCard({
 
       {/* Progress bar */}
       <View className="w-full px-4 gap-1">
-        <View className="h-1.5 rounded-full bg-gray-800 overflow-hidden">
+        <View className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: '#231D42' }}>
           <View
-            className="h-full rounded-full bg-accent-500"
-            style={{ width: `${progressPct}%` }}
+            className="h-full rounded-full"
+            style={{ width: `${progressPct}%`, backgroundColor: '#7C3AED' }}
           />
         </View>
         <View className="flex-row justify-between">
-          <Text className="text-xs text-gray-600">
+          <Text className="text-xs" style={{ color: '#5a5280' }}>
             {np ? fmtDuration(np.progressMs) : '0:00'}
           </Text>
-          <Text className="text-xs text-gray-600">
+          <Text className="text-xs" style={{ color: '#5a5280' }}>
             {np ? fmtDuration(np.durationMs) : '0:00'}
           </Text>
         </View>
@@ -138,18 +141,10 @@ function NowPlayingCard({
       {/* Playback controls */}
       <View className="flex-row items-center gap-6">
         <Pressable
-          onPress={() => control.mutate({ action: 'previous' })}
-          className="p-2"
-          disabled={control.isPending}
-        >
-          <SkipBack size={24} color="#9ca3af" />
-        </Pressable>
-        <Pressable
-          onPress={() =>
-            control.mutate({ action: np?.isPlaying ? 'pause' : 'play' })
-          }
-          className="h-12 w-12 rounded-full bg-accent-500 items-center justify-center active:bg-accent-600"
-          disabled={control.isPending}
+          onPress={() => toggleMutation.mutate()}
+          className="h-12 w-12 rounded-full items-center justify-center"
+          style={{ backgroundColor: '#7C3AED' }}
+          disabled={toggleMutation.isPending || !np}
         >
           {np?.isPlaying ? (
             <Pause size={22} color="white" />
@@ -158,20 +153,20 @@ function NowPlayingCard({
           )}
         </Pressable>
         <Pressable
-          onPress={() => control.mutate({ action: 'skip' })}
+          onPress={() => skipMutation.mutate()}
           className="p-2"
-          disabled={control.isPending}
+          disabled={skipMutation.isPending || !np}
         >
           <SkipForward size={24} color="#9ca3af" />
         </Pressable>
       </View>
 
-      {/* Volume indicator */}
+      {/* Volume / provider indicator */}
       {np != null && (
         <View className="flex-row items-center gap-2">
-          <Volume2 size={14} color="#6b7280" />
-          <Text className="text-xs text-gray-500">{np.volume}%</Text>
-          <Text className="text-xs text-gray-700 ml-2 capitalize">{np.provider}</Text>
+          <Volume2 size={14} color="#5a5280" />
+          <Text className="text-xs" style={{ color: '#8889a0' }}>{np.volume}%</Text>
+          <Text className="text-xs ml-2 capitalize" style={{ color: '#5a5280' }}>{np.provider}</Text>
         </View>
       )}
     </Card>
@@ -228,9 +223,9 @@ function QueueTab({ channelId }: { channelId: string }) {
   }, [query, addMutation])
 
   const renderItem = ({ item }: { item: QueueItem }) => (
-    <View className="flex-row items-center gap-3 py-2.5 border-b border-gray-800/50">
-      <Text className="text-xs text-gray-600 w-5 text-right">{item.position}</Text>
-      <View className="h-10 w-10 rounded-lg bg-gray-800 items-center justify-center overflow-hidden flex-shrink-0">
+    <View className="flex-row items-center gap-3 py-2.5" style={{ borderBottomWidth: 1, borderBottomColor: '#1e1a35' }}>
+      <Text className="text-xs w-5 text-right" style={{ color: '#5a5280' }}>{item.position}</Text>
+      <View className="h-10 w-10 rounded-lg items-center justify-center overflow-hidden flex-shrink-0" style={{ backgroundColor: '#1A1530' }}>
         {item.imageUrl ? (
           <Image
             source={{ uri: item.imageUrl }}
@@ -242,15 +237,15 @@ function QueueTab({ channelId }: { channelId: string }) {
         )}
       </View>
       <View className="flex-1 min-w-0">
-        <Text className="text-sm text-gray-200" numberOfLines={1}>
+        <Text className="text-sm text-white" numberOfLines={1}>
           {item.trackName}
         </Text>
-        <Text className="text-xs text-gray-500" numberOfLines={1}>
+        <Text className="text-xs" style={{ color: '#8889a0' }} numberOfLines={1}>
           {item.artist}
           {item.requestedBy ? ` · ${item.requestedBy}` : ''}
         </Text>
       </View>
-      <Text className="text-xs text-gray-600 mr-1">{fmtDuration(item.durationMs)}</Text>
+      <Text className="text-xs mr-1" style={{ color: '#5a5280' }}>{fmtDuration(item.durationMs)}</Text>
       <Pressable
         onPress={() => removeMutation.mutate(item.position)}
         className="p-1.5"
@@ -264,11 +259,12 @@ function QueueTab({ channelId }: { channelId: string }) {
   return (
     <View className="flex-1">
       {/* Add to queue input */}
-      <View className="flex-row items-center gap-2 px-4 py-3 border-b border-gray-800">
+      <View className="flex-row items-center gap-2 px-4 py-3" style={{ borderBottomWidth: 1, borderBottomColor: '#1e1a35' }}>
         <TextInput
-          className="flex-1 rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-gray-100 text-sm"
+          className="flex-1 rounded-lg px-3 py-2 text-sm text-white"
+          style={{ backgroundColor: '#1A1530', borderWidth: 1, borderColor: '#1e1a35' }}
           placeholder="Search or paste Spotify URI..."
-          placeholderTextColor="#6b7280"
+          placeholderTextColor="#3d3566"
           value={query}
           onChangeText={setQuery}
           onSubmitEditing={handleAdd}
@@ -317,80 +313,15 @@ function QueueTab({ channelId }: { channelId: string }) {
 }
 
 // ---------------------------------------------------------------------------
-// History Tab
+// History Tab — no backend endpoint yet
 // ---------------------------------------------------------------------------
 
-function HistoryTab({ channelId }: { channelId: string }) {
-  const { data: history, isLoading, isError, refetch, isRefetching } = useQuery<HistoryItem[]>({
-    queryKey: ['music', 'history', channelId],
-    queryFn: () => getHistory(channelId),
-    enabled: !!channelId,
-  })
-
-  const renderItem = ({ item }: { item: HistoryItem }) => (
-    <View className="flex-row items-center gap-3 py-2.5 border-b border-gray-800/50">
-      <View className="h-10 w-10 rounded-lg bg-gray-800 items-center justify-center overflow-hidden flex-shrink-0">
-        {item.imageUrl ? (
-          <Image
-            source={{ uri: item.imageUrl }}
-            style={{ width: 40, height: 40 }}
-            contentFit="cover"
-          />
-        ) : (
-          <Text className="text-base">🎵</Text>
-        )}
-      </View>
-      <View className="flex-1 min-w-0">
-        <Text className="text-sm text-gray-200" numberOfLines={1}>
-          {item.trackName}
-        </Text>
-        <Text className="text-xs text-gray-500" numberOfLines={1}>
-          {item.artist}
-          {item.requestedBy ? ` · ${item.requestedBy}` : ''}
-        </Text>
-      </View>
-      <Text className="text-xs text-gray-600 text-right">
-        {formatDistanceToNow(new Date(item.playedAt), { addSuffix: true })}
-      </Text>
-    </View>
-  )
-
-  if (isLoading) {
-    return (
-      <View className="gap-2 p-4">
-        {[...Array(5)].map((_, i) => (
-          <Skeleton key={i} className="h-14 rounded-lg" />
-        ))}
-      </View>
-    )
-  }
-
-  if (isError) {
-    return (
-      <EmptyState
-        icon={<Music2 size={48} color="#f87171" />}
-        title="Failed to load history"
-        message="Pull down to retry"
-      />
-    )
-  }
-
+function HistoryTab() {
   return (
-    <FlatList
-      data={history ?? []}
-      keyExtractor={(item) => `${item.trackName}-${item.playedAt}`}
-      renderItem={renderItem}
-      contentContainerStyle={{ paddingHorizontal: 16 }}
-      refreshControl={
-        <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#a78bfa" />
-      }
-      ListEmptyComponent={
-        <EmptyState
-          icon={<Music2 size={48} color="#9ca3af" />}
-          title="No history yet"
-          message="Songs played will appear here"
-        />
-      }
+    <EmptyState
+      icon={<Music2 size={48} color="#9ca3af" />}
+      title="History not available"
+      message="Song history is coming in a future update"
     />
   )
 }
@@ -403,9 +334,9 @@ export function MusicScreen() {
   const { t: tRaw } = useFeatureTranslation('music')
   const t = tRaw as (key: string) => string
   const channelId = useChannelStore((s) => s.currentChannel?.id ?? '')
-  const [activeTab, setActiveTab] = useState('nowplaying')
+  const { isDesktop } = useBreakpoint()
 
-  const { data: nowPlaying, isLoading: npLoading } = useQuery<NowPlaying>({
+  const { data: nowPlaying, isLoading: npLoading } = useQuery<NowPlaying | null>({
     queryKey: ['music', 'now-playing', channelId],
     queryFn: () => getNowPlaying(channelId),
     enabled: !!channelId,
@@ -414,36 +345,45 @@ export function MusicScreen() {
 
   return (
     <ErrorBoundary>
-    <View className="flex-1 bg-gray-950">
-      <PageHeader title={t('title')} />
+      <View className="flex-1" style={{ backgroundColor: '#141125' }}>
+        <PageHeader title={t('title')} subtitle="Control playback and manage song requests" />
 
-      <NowPlayingCard
-        channelId={channelId}
-        np={nowPlaying}
-        isLoading={npLoading}
-      />
-
-      <Tabs
-        tabs={TABS}
-        activeKey={activeTab}
-        onChange={setActiveTab}
-        className="mt-2"
-      />
-
-      <View className="flex-1">
-        {activeTab === 'nowplaying' && (
-          <View className="flex-1 items-center justify-center px-8">
-            <Text className="text-gray-500 text-sm text-center">
-              {nowPlaying
-                ? `Playing from ${nowPlaying.provider}`
-                : 'No track currently playing'}
-            </Text>
+        {isDesktop ? (
+          // Desktop: 2-column layout
+          <View className="flex-1 flex-row gap-0">
+            {/* Left: Now Playing (fixed width) */}
+            <View
+              style={{
+                width: 400,
+                borderRightWidth: 1,
+                borderRightColor: '#1e1a35',
+              }}
+            >
+              <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
+                <NowPlayingCard
+                  channelId={channelId}
+                  np={nowPlaying}
+                  isLoading={npLoading}
+                />
+              </ScrollView>
+            </View>
+            {/* Right: Queue + History */}
+            <View className="flex-1 flex-col">
+              <QueueTab channelId={channelId} />
+            </View>
           </View>
+        ) : (
+          // Mobile: stacked
+          <>
+            <NowPlayingCard
+              channelId={channelId}
+              np={nowPlaying}
+              isLoading={npLoading}
+            />
+            <QueueTab channelId={channelId} />
+          </>
         )}
-        {activeTab === 'queue' && <QueueTab channelId={channelId} />}
-        {activeTab === 'history' && <HistoryTab channelId={channelId} />}
       </View>
-    </View>
     </ErrorBoundary>
   )
 }

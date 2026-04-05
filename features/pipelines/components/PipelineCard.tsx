@@ -16,7 +16,7 @@ export function PipelineCard({ pipeline, onPress }: PipelineCardProps) {
         <View className="flex-row items-center justify-between">
           <View className="flex-row items-center gap-2">
             <Puzzle size={16} color="rgb(167, 139, 250)" />
-            <Text className="text-gray-100 font-semibold">{pipeline.name}</Text>
+            <Text className="font-semibold text-white">{pipeline.name}</Text>
           </View>
           <Badge
             label={pipeline.isEnabled ? 'Active' : 'Disabled'}
@@ -24,9 +24,9 @@ export function PipelineCard({ pipeline, onPress }: PipelineCardProps) {
           />
         </View>
         {pipeline.description && (
-          <Text className="text-gray-400 text-sm">{pipeline.description}</Text>
+          <Text className="text-sm" style={{ color: '#8889a0' }}>{pipeline.description}</Text>
         )}
-        <Text className="text-gray-600 text-xs">{pipeline.graph.nodes.length} nodes</Text>
+        <Text className="text-xs" style={{ color: '#5a5280' }}>{pipeline.graph.nodes.length} nodes</Text>
       </Card>
     </Pressable>
   )

@@ -4,6 +4,7 @@ import {
   HubConnectionState,
   LogLevel,
 } from '@microsoft/signalr'
+import { API_BASE_URL } from '@/lib/utils/apiUrl'
 
 // Dynamic token getter — updated by useSignalR after auth changes.
 // Using a getter avoids stale tokens on refresh without recreating the connection.
@@ -14,7 +15,7 @@ export function setSignalRTokenGetter(getter: () => string): void {
 }
 
 function makeBaseUrl(hubPath: string): string {
-  return `${process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:5080'}${hubPath}`
+  return `${API_BASE_URL}${hubPath}`
 }
 
 function buildConnection(hubPath: string): HubConnection {

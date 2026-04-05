@@ -33,15 +33,12 @@ const { setAuthToken } = require('@/lib/api/client')
 const { destroyAllConnections } = require('@/lib/signalr/connection')
 
 const mockUser: User = {
-  id: 'user-1',
-  twitchId: 'twitch-1',
-  login: 'testuser',
+  id: 'twitch-1',
+  username: 'testuser',
   displayName: 'TestUser',
   profileImageUrl: 'https://example.com/avatar.png',
-  chatColor: '#9146FF',
-  email: 'test@example.com',
-  isAdmin: false,
-  permissions: ['commands.view'],
+  color: '#9146FF',
+  broadcasterType: '',
   createdAt: '2024-01-01T00:00:00Z',
 }
 

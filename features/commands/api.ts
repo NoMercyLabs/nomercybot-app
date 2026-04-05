@@ -1,29 +1,46 @@
 import { apiClient } from '@/lib/api/client'
-import type { Command, CommandCreate, CommandUpdate } from './types'
+import type { Command, CommandCreate, CommandListItem, CommandUpdate } from './types'
 
-export async function fetchCommands(channelId: string) {
-  const res = await apiClient.get<Command[]>(`/channels/${channelId}/commands`)
-  return res.data
+type PaginatedData<T> = { data: T[] }
+type Envelope<T> = { data: T }
+
+export async function fetchCommands(channelId: string): Promise<CommandListItem[]> {
+  const res = await apiClient.get<PaginatedData<CommandListItem>>(
+    `/api/v1/channels/${channelId}/commands`,
+  )
+  return res.data.data
 }
 
-export async function fetchCommand(channelId: string, name: string) {
-  const res = await apiClient.get<Command>(`/channels/${channelId}/commands/${name}`)
-  return res.data
+export async function fetchCommand(channelId: string, name: string): Promise<Command> {
+  const res = await apiClient.get<Envelope<Command>>(
+    `/api/v1/channels/${channelId}/commands/${name}`,
+  )
+  return res.data.data
 }
 
 /** Alias for fetchCommand — matches the task spec naming */
 export const getCommand = fetchCommand
 
-export async function createCommand(channelId: string, data: CommandCreate) {
-  const res = await apiClient.post<Command>(`/channels/${channelId}/commands`, data)
-  return res.data
+export async function createCommand(channelId: string, data: CommandCreate): Promise<Command> {
+  const res = await apiClient.post<Envelope<Command>>(
+    `/api/v1/channels/${channelId}/commands`,
+    data,
+  )
+  return res.data.data
 }
 
-export async function updateCommand(channelId: string, name: string, data: CommandUpdate) {
-  const res = await apiClient.put<Command>(`/channels/${channelId}/commands/${name}`, data)
-  return res.data
+export async function updateCommand(
+  channelId: string,
+  name: string,
+  data: CommandUpdate,
+): Promise<Command> {
+  const res = await apiClient.put<Envelope<Command>>(
+    `/api/v1/channels/${channelId}/commands/${name}`,
+    data,
+  )
+  return res.data.data
 }
 
-export async function deleteCommand(channelId: string, name: string) {
-  await apiClient.delete(`/channels/${channelId}/commands/${name}`)
+export async function deleteCommand(channelId: string, name: string): Promise<void> {
+  await apiClient.delete(`/api/v1/channels/${channelId}/commands/${name}`)
 }

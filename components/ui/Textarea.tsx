@@ -11,18 +11,19 @@ interface TextareaProps extends TextInputProps {
 export function Textarea({ label, error, rows = 4, className, ...props }: TextareaProps) {
   return (
     <View className="gap-1.5">
-      {label && <Text className="text-sm font-medium text-gray-300">{label}</Text>}
+      {label && <Text className="text-sm font-medium" style={{ color: '#d1d5db' }}>{label}</Text>}
       <TextInput
         multiline
         numberOfLines={rows}
         textAlignVertical="top"
         className={cn(
-          'rounded-lg bg-surface-raised border border-border px-4 py-3 text-gray-100',
-          'focus:border-accent-500',
-          error && 'border-red-500',
+          'rounded-lg px-4 py-3',
+          error ? 'border-red-500' : 'border-[#1e1a35]',
+          'border',
           className,
         )}
-        placeholderTextColor="rgb(107, 114, 128)"
+        style={{ backgroundColor: '#1A1530', color: '#f4f5fa', outlineStyle: 'none' } as any}
+        placeholderTextColor="#3d3566"
         {...props}
       />
       {error && <Text className="text-xs text-red-400">{error}</Text>}

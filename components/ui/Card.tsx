@@ -3,12 +3,22 @@ import { cn } from '@/lib/utils/cn'
 
 interface CardProps extends ViewProps {
   className?: string
+  accentColor?: string
 }
 
-export function Card({ className, children, ...props }: CardProps) {
+export function Card({ className, children, accentColor, style, ...props }: CardProps) {
   return (
     <View
-      className={cn('rounded-xl bg-surface-raised', className)}
+      className={cn('rounded-xl', className)}
+      style={[
+        {
+          backgroundColor: '#1A1530',
+          borderWidth: 1,
+          borderColor: '#1e1a35',
+          ...(accentColor ? { borderLeftWidth: 3, borderLeftColor: accentColor } : {}),
+        },
+        style,
+      ]}
       {...props}
     >
       {children}
@@ -26,12 +36,15 @@ interface CardHeaderProps {
 
 export function CardHeader({ title, subtitle, action, children, className }: CardHeaderProps) {
   return (
-    <View className={cn('flex-row items-center justify-between px-4 py-3 border-b border-border', className)}>
+    <View
+      className={cn('flex-row items-center justify-between px-4 py-3', className)}
+      style={{ borderBottomWidth: 1, borderBottomColor: '#1e1a35', backgroundColor: '#231D42' }}
+    >
       <View className="flex-1">
         {title ? (
           <>
-            <Text className="text-base font-semibold text-white">{title}</Text>
-            {subtitle && <Text className="text-sm text-gray-400">{subtitle}</Text>}
+            <Text className="text-sm font-semibold text-white">{title}</Text>
+            {subtitle && <Text className="text-xs mt-0.5" style={{ color: '#5a5280' }}>{subtitle}</Text>}
           </>
         ) : (
           children

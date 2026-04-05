@@ -113,7 +113,7 @@ export default function RewardDetailScreen() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 bg-gray-950">
+      <View style={{ flex: 1, backgroundColor: '#141125' }}>
         <PageHeader title="Reward" showBack />
         <View className="p-4 gap-3">
           <Skeleton className="h-14 rounded-xl" />
@@ -126,7 +126,7 @@ export default function RewardDetailScreen() {
 
   if (isError) {
     return (
-      <View className="flex-1 bg-gray-950">
+      <View style={{ flex: 1, backgroundColor: '#141125' }}>
         <PageHeader title="Reward" showBack />
         <EmptyState
           icon={<AlertTriangle size={32} color="#ef4444" />}
@@ -140,7 +140,7 @@ export default function RewardDetailScreen() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-gray-950" contentContainerClassName="p-4 gap-4">
+    <ScrollView style={{ flex: 1, backgroundColor: '#141125' }} contentContainerStyle={{ padding: 20, paddingBottom: 32, gap: 16 }}>
       <PageHeader
         title={reward?.name ?? 'Reward'}
         showBack
@@ -234,7 +234,7 @@ export default function RewardDetailScreen() {
       </Card>
 
       <Card className="gap-4">
-        <Text className="text-sm font-semibold text-gray-300">Limits</Text>
+        <Text className="text-sm font-semibold text-white">Limits</Text>
         <Controller
           control={control}
           name="maxRedemptions"

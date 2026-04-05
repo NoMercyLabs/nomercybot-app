@@ -3,16 +3,10 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api/client'
 import { useAuth } from '@/hooks/useAuth'
 import { PageHeader } from '@/components/layout/PageHeader'
-import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Skeleton } from '@/components/ui/Skeleton'
 import {
-  MessageSquare,
-  Clock,
-  Hash,
-  Terminal,
-  Download,
-  Trash2,
+  MessageSquare, Clock, Hash, Terminal, Download, Trash2, Info, Shield,
 } from 'lucide-react-native'
 import { ErrorBoundary } from '@/components/feedback/ErrorBoundary'
 
@@ -26,12 +20,27 @@ interface MyData {
   exportAvailable: boolean
 }
 
+interface ChannelAppearance {
+  channelName: string
+  followDate: string
+  messages: number
+  watchTime: string
+}
+
 function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <View className="flex-1 bg-surface-raised rounded-xl p-4 items-center gap-2 min-w-[40%]">
-      <View className="opacity-70">{icon}</View>
-      <Text className="text-xl font-bold text-gray-100">{value}</Text>
-      <Text className="text-xs text-gray-500 text-center">{label}</Text>
+    <View
+      className="flex-1 rounded-xl p-4 items-center gap-2"
+      style={{
+        backgroundColor: '#1A1530',
+        borderWidth: 1,
+        borderColor: '#1e1a35',
+        minWidth: '42%',
+      }}
+    >
+      <View style={{ opacity: 0.8 }}>{icon}</View>
+      <Text className="text-xl font-bold text-white">{value}</Text>
+      <Text className="text-xs text-center" style={{ color: '#5a5280' }}>{label}</Text>
     </View>
   )
 }
@@ -48,12 +57,19 @@ export function MyDataScreen() {
     },
   })
 
+  const { data: channels = [] } = useQuery<ChannelAppearance[]>({
+    queryKey: ['me', 'channels'],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const res = await apiClient.get<{ data: ChannelAppearance[] }>(`/v1/users/${user!.id}/channels`)
+      return res.data.data
+    },
+  })
+
   const exportMutation = useMutation<void, Error>({
     mutationFn: async () => {
       if (Platform.OS === 'web') {
-        const res = await apiClient.get(`/v1/users/${user!.id}/data-export`, {
-          responseType: 'blob',
-        })
+        const res = await apiClient.get(`/v1/users/${user!.id}/data-export`, { responseType: 'blob' })
         const url = URL.createObjectURL(res.data as Blob)
         const a = document.createElement('a')
         a.href = url
@@ -64,24 +80,16 @@ export function MyDataScreen() {
         throw new Error('Please use the web app to download your data export.')
       }
     },
-    onSuccess: () => {
-      Alert.alert('Export Started', 'Your data is downloading.')
-    },
-    onError: (e) => {
-      Alert.alert('Export', e.message || 'Export failed.')
-    },
+    onSuccess: () => Alert.alert('Export Started', 'Your data is downloading.'),
+    onError: (e) => Alert.alert('Export', e.message || 'Export failed.'),
   })
 
   const deleteMutation = useMutation<void, Error>({
     mutationFn: async () => {
       await apiClient.delete(`/v1/users/${user!.id}/data`)
     },
-    onSuccess: () => {
-      Alert.alert('Data Deleted', 'Your data has been deleted from our systems.')
-    },
-    onError: () => {
-      Alert.alert('Delete Failed', 'Could not delete your data. Please try again.')
-    },
+    onSuccess: () => Alert.alert('Data Deleted', 'Your data has been deleted from our systems.'),
+    onError: () => Alert.alert('Delete Failed', 'Could not delete your data. Please try again.'),
   })
 
   function handleDeleteRequest() {
@@ -90,123 +98,189 @@ export function MyDataScreen() {
       'This will permanently delete all your data including message history, watch time, and preferences. This action cannot be undone.\n\nAre you sure?',
       [
         { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete Everything',
-          style: 'destructive',
-          onPress: () => deleteMutation.mutate(),
-        },
+        { text: 'Delete Everything', style: 'destructive', onPress: () => deleteMutation.mutate() },
       ],
     )
   }
 
   function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
+    return new Date(dateStr).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
   }
 
   return (
     <ErrorBoundary>
-    <ScrollView className="flex-1 bg-gray-950" contentContainerClassName="pb-8" refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}>
-      <PageHeader
-        title="My Data"
-        subtitle="GDPR data management"
-      />
+      <ScrollView
+        style={{ flex: 1, backgroundColor: '#141125' }}
+        contentContainerStyle={{ paddingBottom: 32 }}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
+      >
+        <PageHeader title="My Data" subtitle="GDPR data management" />
 
-      <View className="px-4 pt-4 gap-4">
-        {isLoading ? (
-          <Skeleton className="h-32 w-full" count={3} />
-        ) : (
-          <>
-            {/* Stats grid */}
-            <Card>
-              <CardHeader title="Your Activity" />
-              <View className="p-4 flex-row flex-wrap gap-3">
-                <StatCard
-                  icon={<MessageSquare size={20} color="rgb(139,92,246)" />}
-                  label="Messages Sent"
-                  value={(data?.messageCount ?? 0).toLocaleString()}
-                />
-                <StatCard
-                  icon={<Clock size={20} color="rgb(59,130,246)" />}
-                  label="Watch Hours"
-                  value={(data?.watchHours ?? 0).toLocaleString()}
-                />
-                <StatCard
-                  icon={<Hash size={20} color="rgb(16,185,129)" />}
-                  label="Channels"
-                  value={(data?.channelsCount ?? 0).toString()}
-                />
-                <StatCard
-                  icon={<Terminal size={20} color="rgb(245,158,11)" />}
-                  label="Commands Used"
-                  value={(data?.commandsUsed ?? 0).toLocaleString()}
-                />
+        <View className="px-5 pt-4 gap-5">
+          {/* Info banner */}
+          <View
+            className="flex-row items-start gap-3 rounded-xl p-4"
+            style={{
+              backgroundColor: 'rgba(59,130,246,0.1)',
+              borderWidth: 1,
+              borderColor: 'rgba(59,130,246,0.3)',
+            }}
+          >
+            <Info size={16} color="#60a5fa" />
+            <View className="flex-1 gap-1">
+              <Text className="text-sm font-medium" style={{ color: '#60a5fa' }}>Your Privacy Rights</Text>
+              <Text className="text-xs" style={{ color: '#8889a0' }}>
+                Under GDPR you have the right to access, export, and delete your personal data at any time.
+                We store only what's necessary to provide the service.
+              </Text>
+            </View>
+          </View>
+
+          {isLoading ? (
+            <Skeleton className="h-32 w-full" count={3} />
+          ) : (
+            <>
+              {/* Stats grid */}
+              <View className="gap-3">
+                <Text className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#5a5280' }}>
+                  Your Activity
+                </Text>
+                <View className="flex-row flex-wrap gap-3">
+                  <StatCard icon={<MessageSquare size={20} color="#a78bfa" />} label="Messages Sent" value={(data?.messageCount ?? 0).toLocaleString()} />
+                  <StatCard icon={<Clock size={20} color="#60a5fa" />} label="Watch Hours" value={(data?.watchHours ?? 0).toLocaleString()} />
+                  <StatCard icon={<Hash size={20} color="#4ade80" />} label="Channels" value={(data?.channelsCount ?? 0).toString()} />
+                  <StatCard icon={<Terminal size={20} color="#fbbf24" />} label="Commands Used" value={(data?.commandsUsed ?? 0).toLocaleString()} />
+                </View>
               </View>
-            </Card>
 
-            {/* Account Info */}
-            {(data?.firstSeen || data?.lastActive) && (
-              <Card>
-                <CardHeader title="Account Timeline" />
-                <View className="px-4 py-3 gap-2">
+              {/* Channels you appear in */}
+              <View className="gap-3">
+                <Text className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#5a5280' }}>
+                  Channels You Appear In
+                </Text>
+                <View
+                  className="rounded-xl overflow-hidden"
+                  style={{ backgroundColor: '#1A1530', borderWidth: 1, borderColor: '#1e1a35' }}
+                >
+                  <View
+                    className="flex-row px-4 py-2.5"
+                    style={{ backgroundColor: '#231D42' }}
+                  >
+                    {['CHANNEL', 'FOLLOW DATE', 'MESSAGES', 'WATCH TIME'].map((h, i) => (
+                      <View key={h} style={{ flex: i === 0 ? 2 : 1 }}>
+                        <Text className="text-xs font-semibold tracking-wider" style={{ color: '#3d3566' }}>{h}</Text>
+                      </View>
+                    ))}
+                  </View>
+                  {channels.length === 0 ? (
+                    <View className="items-center py-8">
+                      <Text className="text-sm" style={{ color: '#3d3566' }}>No channel data yet</Text>
+                    </View>
+                  ) : (
+                    channels.map((ch, i) => (
+                      <View
+                        key={ch.channelName}
+                        className="flex-row items-center px-4 py-3"
+                        style={i > 0 ? { borderTopWidth: 1, borderTopColor: '#1e1a35' } : undefined}
+                      >
+                        <View style={{ flex: 2 }}>
+                          <Text className="text-sm font-medium text-white">{ch.channelName}</Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text className="text-xs" style={{ color: '#8889a0' }}>{ch.followDate}</Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text className="text-xs" style={{ color: '#8889a0' }}>{ch.messages}</Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text className="text-xs" style={{ color: '#8889a0' }}>{ch.watchTime}</Text>
+                        </View>
+                      </View>
+                    ))
+                  )}
+                </View>
+              </View>
+
+              {/* Account timeline */}
+              {(data?.firstSeen || data?.lastActive) && (
+                <View
+                  className="rounded-xl px-4"
+                  style={{ backgroundColor: '#1A1530', borderWidth: 1, borderColor: '#1e1a35' }}
+                >
                   {data.firstSeen && (
-                    <View className="flex-row justify-between items-center py-1">
-                      <Text className="text-sm text-gray-400">First seen</Text>
-                      <Text className="text-sm text-gray-100">{formatDate(data.firstSeen)}</Text>
+                    <View
+                      className="flex-row justify-between items-center py-3"
+                      style={{ borderBottomWidth: data.lastActive ? 1 : 0, borderBottomColor: '#1e1a35' }}
+                    >
+                      <Text className="text-sm" style={{ color: '#8889a0' }}>First seen</Text>
+                      <Text className="text-sm text-white">{formatDate(data.firstSeen)}</Text>
                     </View>
                   )}
                   {data.lastActive && (
-                    <View className="flex-row justify-between items-center py-1">
-                      <Text className="text-sm text-gray-400">Last active</Text>
-                      <Text className="text-sm text-gray-100">{formatDate(data.lastActive)}</Text>
+                    <View className="flex-row justify-between items-center py-3">
+                      <Text className="text-sm" style={{ color: '#8889a0' }}>Last active</Text>
+                      <Text className="text-sm text-white">{formatDate(data.lastActive)}</Text>
                     </View>
                   )}
                 </View>
-              </Card>
-            )}
+              )}
 
-            {/* Export */}
-            <Card>
-              <CardHeader title="Export My Data" />
-              <View className="px-4 py-4 gap-3">
-                <Text className="text-sm text-gray-400">
-                  Download a copy of all your data, including message history, watch time, and
-                  account information.
-                </Text>
-                <Button
-                  label="Request Data Export"
-                  variant="secondary"
-                  leftIcon={<Download size={16} color="rgb(209,213,219)" />}
-                  loading={exportMutation.isPending}
-                  onPress={() => exportMutation.mutate()}
-                />
-              </View>
-            </Card>
+              {/* Export + Delete side-by-side */}
+              <View className="flex-row gap-3">
+                {/* Export card */}
+                <View
+                  className="flex-1 rounded-xl p-4 gap-3"
+                  style={{
+                    backgroundColor: '#1A1530',
+                    borderWidth: 1,
+                    borderColor: 'rgba(34,197,94,0.3)',
+                  }}
+                >
+                  <View className="flex-row items-center gap-2">
+                    <Shield size={16} color="#22c55e" />
+                    <Text className="text-sm font-semibold" style={{ color: '#22c55e' }}>Export Your Data</Text>
+                  </View>
+                  <Text className="text-xs flex-1" style={{ color: '#8889a0' }}>
+                    Download a copy of all your data including message history and account information.
+                  </Text>
+                  <Button
+                    label="Export Data"
+                    leftIcon={<Download size={15} color="white" />}
+                    loading={exportMutation.isPending}
+                    onPress={() => exportMutation.mutate()}
+                    style={{ backgroundColor: '#22c55e' } as any}
+                  />
+                </View>
 
-            {/* Delete */}
-            <Card className="border border-red-900">
-              <CardHeader title="Danger Zone" />
-              <View className="px-4 py-4 gap-3">
-                <Text className="text-sm text-gray-400">
-                  Permanently delete all your data from our systems. This includes messages, watch
-                  history, and preferences. This action is irreversible.
-                </Text>
-                <Button
-                  label="Delete My Data"
-                  variant="danger"
-                  leftIcon={<Trash2 size={16} color="white" />}
-                  loading={deleteMutation.isPending}
-                  onPress={handleDeleteRequest}
-                />
+                {/* Delete card */}
+                <View
+                  className="flex-1 rounded-xl p-4 gap-3"
+                  style={{
+                    backgroundColor: 'rgba(239,68,68,0.05)',
+                    borderWidth: 1,
+                    borderColor: 'rgba(239,68,68,0.3)',
+                  }}
+                >
+                  <View className="flex-row items-center gap-2">
+                    <Trash2 size={16} color="#ef4444" />
+                    <Text className="text-sm font-semibold" style={{ color: '#ef4444' }}>Delete Your Data</Text>
+                  </View>
+                  <Text className="text-xs flex-1" style={{ color: '#8889a0' }}>
+                    Permanently delete all your data from our systems. This action is irreversible.
+                  </Text>
+                  <Button
+                    label="Delete Data"
+                    variant="danger"
+                    leftIcon={<Trash2 size={15} color="white" />}
+                    loading={deleteMutation.isPending}
+                    onPress={handleDeleteRequest}
+                  />
+                </View>
               </View>
-            </Card>
-          </>
-        )}
-      </View>
-    </ScrollView>
+            </>
+          )}
+        </View>
+      </ScrollView>
     </ErrorBoundary>
   )
 }

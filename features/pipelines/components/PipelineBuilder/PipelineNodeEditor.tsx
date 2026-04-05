@@ -33,22 +33,25 @@ export function PipelineNodeEditor({ node, onUpdate, onDelete, onClose }: Pipeli
   }
 
   return (
-    <View className="flex-1 bg-surface-raised">
+    <View className="flex-1" style={{ backgroundColor: '#1A1530' }}>
       {/* Header */}
-      <View className="flex-row items-center justify-between border-b border-border px-4 py-3">
+      <View
+        className="flex-row items-center justify-between px-4 py-3"
+        style={{ borderBottomWidth: 1, borderBottomColor: '#1e1a35' }}
+      >
         <View className="flex-1 gap-0.5">
           <View className={`self-start rounded px-1.5 py-0.5 ${CATEGORY_BG[node.type] ?? 'bg-gray-800'}`}>
             <Text className={`text-xs font-medium capitalize ${CATEGORY_TEXT[node.type] ?? 'text-gray-300'}`}>
               {node.type}
             </Text>
           </View>
-          <Text className="text-gray-100 font-semibold">{node.label}</Text>
+          <Text className="font-semibold" style={{ color: '#f4f5fa' }}>{node.label}</Text>
           {def?.description && (
-            <Text className="text-xs text-gray-500">{def.description}</Text>
+            <Text className="text-xs" style={{ color: '#6b7280' }}>{def.description}</Text>
           )}
         </View>
         <Pressable onPress={onClose} className="p-1 ml-2">
-          <X size={18} color="rgb(156,163,175)" />
+          <X size={18} color="#9ca3af" />
         </Pressable>
       </View>
 
@@ -109,14 +112,13 @@ export function PipelineNodeEditor({ node, onUpdate, onDelete, onClose }: Pipeli
                   value={String(value ?? '')}
                   onChangeText={(v) => updateConfig(field.key, v)}
                 />
-                <Text className="text-xs text-gray-500 mt-1">
+                <Text className="text-xs mt-1" style={{ color: '#6b7280' }}>
                   Variables: {'{user}'}, {'{user.id}'}, {'{channel}'}, {'{stream.title}'}, {'{stream.game}'}, {'{stream.uptime}'}, {'{time}'}, {'{date}'}, {'{random.number.N}'}
                 </Text>
               </View>
             )
           }
 
-          // text / default
           return (
             <Input
               key={field.key}
@@ -130,7 +132,7 @@ export function PipelineNodeEditor({ node, onUpdate, onDelete, onClose }: Pipeli
 
         {/* No config */}
         {def && def.configSchema.length === 0 && (
-          <Text className="text-sm text-gray-500">No configuration needed for this node.</Text>
+          <Text className="text-sm" style={{ color: '#6b7280' }}>No configuration needed for this node.</Text>
         )}
 
         {/* Delete */}

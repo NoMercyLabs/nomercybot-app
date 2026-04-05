@@ -1,53 +1,64 @@
-import { ScrollView, View, Text, Pressable } from 'react-native'
+import { ScrollView, View, Text, Pressable, RefreshControl } from 'react-native'
 import { useRouter } from 'expo-router'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { usePaginatedQuery } from '@/hooks/useApi'
-import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { Button } from '@/components/ui/Button'
 import { Plus } from 'lucide-react-native'
+import { ErrorBoundary } from '@/components/feedback/ErrorBoundary'
 import type { PipelineListItem } from '@/types/pipeline'
 
 export default function PipelinesScreen() {
   const router = useRouter()
-  const { data: response, isLoading } = usePaginatedQuery<PipelineListItem>('pipelines', '/pipelines', 1, 25)
+  const { data: response, isLoading, isRefetching, refetch } = usePaginatedQuery<PipelineListItem>('pipelines', '/pipelines', 1, 25)
   const pipelines = response?.data
 
   return (
-    <ScrollView className="flex-1 bg-surface">
-      <PageHeader
-        title="Pipelines"
-        action={
-          <Pressable
-            onPress={() => router.push('/(dashboard)/pipelines/new' as any)}
-            className="flex-row items-center gap-2 rounded-lg bg-accent-600 px-4 py-2"
-          >
-            <Plus size={16} color="white" />
-            <Text className="text-white font-medium">New</Text>
-          </Pressable>
-        }
-      />
-      <View className="px-6 py-4 gap-3">
-        {isLoading
-          ? Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)
-          : pipelines?.map((p) => (
-              <Pressable
-                key={p.id}
-                onPress={() => router.push(`/(dashboard)/pipelines/${String(p.id)}` as any)}
-              >
-                <Card className="p-4 gap-2">
-                  <View className="flex-row items-center justify-between">
-                    <Text className="text-gray-100 font-medium">{p.name}</Text>
-                    <Badge label={p.isEnabled ? 'Active' : 'Disabled'} variant={p.isEnabled ? 'success' : 'secondary'} />
+    <ErrorBoundary>
+      <ScrollView
+        style={{ flex: 1, backgroundColor: '#141125' }}
+        contentContainerStyle={{ paddingBottom: 32 }}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
+      >
+        <PageHeader
+          title="Pipelines"
+          rightContent={
+            <Button
+              size="sm"
+              onPress={() => router.push('/(dashboard)/pipelines/new' as any)}
+              leftIcon={<Plus size={14} color="white" />}
+              label="New"
+            />
+          }
+        />
+        <View className="px-5 py-4 gap-3">
+          {isLoading
+            ? Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)
+            : pipelines?.map((p) => (
+                <Pressable
+                  key={p.id}
+                  onPress={() => router.push(`/(dashboard)/pipelines/${String(p.id)}` as any)}
+                >
+                  <View
+                    className="rounded-xl p-4 gap-2"
+                    style={{ backgroundColor: '#1A1530', borderWidth: 1, borderColor: '#1e1a35' }}
+                  >
+                    <View className="flex-row items-center justify-between">
+                      <Text className="font-medium text-white">{p.name}</Text>
+                      <Badge label={p.isEnabled ? 'Active' : 'Disabled'} variant={p.isEnabled ? 'success' : 'secondary'} />
+                    </View>
+                    {p.description && (
+                      <Text className="text-sm" style={{ color: '#8889a0' }}>{p.description}</Text>
+                    )}
+                    <Text className="text-xs" style={{ color: '#5a5280' }}>
+                      {p.triggerCount} trigger{p.triggerCount !== 1 ? 's' : ''}
+                    </Text>
                   </View>
-                  {p.description && <Text className="text-gray-400 text-sm">{p.description}</Text>}
-                  <Text className="text-gray-500 text-xs">
-                    {p.triggerCount} trigger{p.triggerCount !== 1 ? 's' : ''}
-                  </Text>
-                </Card>
-              </Pressable>
-            ))}
-      </View>
-    </ScrollView>
+                </Pressable>
+              ))}
+        </View>
+      </ScrollView>
+    </ErrorBoundary>
   )
 }

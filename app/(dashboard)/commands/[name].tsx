@@ -92,7 +92,7 @@ export default function CommandEditScreen() {
 
   return (
     <>
-      <ScrollView className="flex-1 bg-surface">
+      <ScrollView style={{ flex: 1, backgroundColor: '#141125' }}>
         <PageHeader
           title={isNew ? 'New Command' : `Edit !${name}`}
           backHref="/(dashboard)/commands"
@@ -100,10 +100,11 @@ export default function CommandEditScreen() {
             !isNew ? (
               <Pressable
                 onPress={() => setDeleteVisible(true)}
-                className="p-2 rounded-lg bg-red-900/30"
+                className="p-2 rounded-lg"
+                style={{ backgroundColor: 'rgba(239,68,68,0.2)' }}
                 disabled={isSubmitting || isLoading}
               >
-                <Trash2 size={18} color="rgb(252, 165, 165)" />
+                <Trash2 size={18} color="#fca5a5" />
               </Pressable>
             ) : undefined
           }
@@ -112,18 +113,19 @@ export default function CommandEditScreen() {
         {/* Error state for failed fetch — shown exclusively, no form */}
         {!isLoading && !isNew && !command ? (
           <View className="items-center px-6 py-10 gap-3">
-            <Text className="text-gray-400 text-center">
+            <Text className="text-center" style={{ color: '#8889a0' }}>
               Could not load command. It may not exist.
             </Text>
             <Pressable
               onPress={() => router.push('/(dashboard)/commands' as any)}
-              className="px-4 py-2 rounded-xl border border-border"
+              className="px-4 py-2 rounded-xl"
+              style={{ borderWidth: 1, borderColor: '#1e1a35' }}
             >
-              <Text className="text-gray-300 font-medium">Back to Commands</Text>
+              <Text className="font-medium text-white">Back to Commands</Text>
             </Pressable>
           </View>
         ) : (
-          <View className="px-6 py-4">
+          <View className="px-5 py-4">
             {isLoading ? (
               /* ── Skeleton Loading ── */
               <View className="gap-4">

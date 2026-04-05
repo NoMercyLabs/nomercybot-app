@@ -70,25 +70,36 @@ export function ColorPicker({ value, onValueChange, label, className }: ColorPic
 
   return (
     <View className={cn('gap-2', className)}>
-      {label && <Text className="text-sm font-medium text-gray-300">{label}</Text>}
+      {label && <Text className="text-sm font-medium" style={{ color: '#d1d5db' }}>{label}</Text>}
 
       {/* Current color preview */}
       <View className="flex-row items-center gap-3">
         <View
-          className="h-10 w-10 rounded-lg border border-border"
-          style={{ backgroundColor: isValidHex(value) ? value : '#9146FF' }}
+          className="h-10 w-10 rounded-lg"
+          style={{
+            backgroundColor: isValidHex(value) ? value : '#9146FF',
+            borderWidth: 1,
+            borderColor: '#1e1a35',
+          }}
         />
         <TextInput
           value={inputValue}
           onChangeText={handleInputChange}
           placeholder="#9146FF"
-          placeholderTextColor="#5a5b72"
+          placeholderTextColor="#5a5280"
           autoCapitalize="characters"
           maxLength={7}
-          className="h-10 flex-1 rounded-md border border-border bg-gray-800 px-3 font-mono text-sm text-gray-200"
+          className="h-10 flex-1 rounded-md px-3 font-mono text-sm"
+          style={{
+            backgroundColor: '#1A1530',
+            borderWidth: 1,
+            borderColor: '#1e1a35',
+            color: '#e5e7eb',
+            outlineStyle: 'none',
+          } as any}
         />
         {hsl && (
-          <Text className="text-xs text-gray-500">
+          <Text className="text-xs" style={{ color: '#6b7280' }}>
             {hsl.h}° {hsl.s}% {hsl.l}%
           </Text>
         )}

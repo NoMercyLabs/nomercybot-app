@@ -14,7 +14,7 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { useChannelStore } from '@/stores/useChannelStore'
 import { useToast } from '@/hooks/useToast'
-import { apiClient } from '@/lib/api/client'
+import { widgetsApi } from '@/features/widgets/api'
 import { WIDGET_TYPE_LABELS } from '@/features/widgets/types'
 import type { Widget, WidgetType } from '@/features/widgets/types'
 
@@ -153,41 +153,39 @@ function ConfigFieldRow({
 
 export default function WidgetEditorScreen() {
   const { widgetId } = useLocalSearchParams<{ widgetId: string }>()
-  const broadcasterId = useChannelStore((s) => s.currentChannel?.broadcasterId)
+  const channelId = useChannelStore((s) => s.currentChannel?.id)
   const toast = useToast()
   const qc = useQueryClient()
 
   const { data: widget, isLoading, isError, refetch } = useQuery<Widget>({
-    queryKey: ['widgets', broadcasterId, widgetId],
-    queryFn: () =>
-      apiClient.get(`/api/${broadcasterId}/widgets/${widgetId}`).then((r) => r.data),
-    enabled: !!broadcasterId && !!widgetId,
+    queryKey: ['widgets', channelId, widgetId],
+    queryFn: () => widgetsApi.get(channelId!, widgetId!),
+    enabled: !!channelId && !!widgetId,
   })
 
   const updateMutation = useMutation({
-    mutationFn: (patch: Partial<Widget>) =>
-      apiClient.patch(`/api/${broadcasterId}/widgets/${widgetId}`, patch).then((r) => r.data),
+    mutationFn: (patch: { name?: string; isEnabled?: boolean; settings?: Record<string, unknown> }) =>
+      widgetsApi.update(channelId!, widgetId!, patch),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['widgets', broadcasterId] })
+      qc.invalidateQueries({ queryKey: ['widgets', channelId] })
       toast.success('Saved')
     },
     onError: () => toast.error('Failed to save'),
   })
 
   const deleteMutation = useMutation({
-    mutationFn: () =>
-      apiClient.delete(`/api/${broadcasterId}/widgets/${widgetId}`).then((r) => r.data),
+    mutationFn: () => widgetsApi.delete(channelId!, widgetId!),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['widgets', broadcasterId] })
+      qc.invalidateQueries({ queryKey: ['widgets', channelId] })
       toast.success('Widget deleted')
       router.replace('/(dashboard)/widgets' as any)
     },
     onError: () => toast.error('Failed to delete'),
   })
 
-  function patchConfig(key: string, value: unknown) {
+  function patchSettings(key: string, value: unknown) {
     if (!widget) return
-    updateMutation.mutate({ config: { ...widget.config, [key]: value } })
+    updateMutation.mutate({ settings: { ...widget.settings, [key]: value } })
   }
 
   function confirmDelete() {
@@ -205,7 +203,7 @@ export default function WidgetEditorScreen() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 bg-gray-950">
+      <View style={{ flex: 1, backgroundColor: '#141125' }}>
         <PageHeader title="Widget Editor" showBack />
         <View className="p-4 gap-3">
           <Skeleton className="h-20 rounded-xl" />
@@ -218,7 +216,7 @@ export default function WidgetEditorScreen() {
 
   if (isError || !widget) {
     return (
-      <View className="flex-1 bg-gray-950">
+      <View style={{ flex: 1, backgroundColor: '#141125' }}>
         <PageHeader title="Widget Editor" showBack />
         <EmptyState
           icon={<AlertTriangle size={32} color="#ef4444" />}
@@ -234,7 +232,7 @@ export default function WidgetEditorScreen() {
   const fields = WIDGET_CONFIG_FIELDS[widget.type] ?? []
 
   return (
-    <ScrollView className="flex-1 bg-gray-950" contentContainerClassName="p-4 gap-4">
+    <ScrollView style={{ flex: 1, backgroundColor: '#141125' }} contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 32 }}>
       <PageHeader
         title={widget.name}
         showBack
@@ -254,8 +252,8 @@ export default function WidgetEditorScreen() {
       <Card className="gap-3">
         <View className="flex-row items-center justify-between">
           <View className="gap-0.5">
-            <Text className="text-sm font-semibold text-gray-200">{widget.name}</Text>
-            <Text className="text-xs text-gray-500">{WIDGET_TYPE_LABELS[widget.type]}</Text>
+            <Text className="text-sm font-semibold text-white">{widget.name}</Text>
+            <Text className="text-xs" style={{ color: '#8889a0' }}>{WIDGET_TYPE_LABELS[widget.type]}</Text>
           </View>
           <Badge
             variant={widget.isEnabled ? 'success' : 'muted'}
@@ -273,12 +271,12 @@ export default function WidgetEditorScreen() {
       {/* Overlay URL */}
       {widget.overlayUrl && (
         <Card className="gap-2">
-          <Text className="text-sm font-semibold text-gray-300">Overlay URL</Text>
-          <Text className="text-xs text-gray-500">
+          <Text className="text-sm font-semibold text-white">Overlay URL</Text>
+          <Text className="text-xs" style={{ color: '#8889a0' }}>
             Add this as a Browser Source in OBS or Streamlabs.
           </Text>
-          <View className="flex-row items-center gap-2 rounded-lg bg-gray-800 px-3 py-2">
-            <Text className="flex-1 text-xs text-gray-400 font-mono" numberOfLines={1}>
+          <View className="flex-row items-center gap-2 rounded-lg px-3 py-2" style={{ backgroundColor: '#231D42' }}>
+            <Text className="flex-1 text-xs font-mono" style={{ color: '#8889a0' }} numberOfLines={1}>
               {widget.overlayUrl}
             </Text>
             <Pressable onPress={copyUrl} className="p-1">
@@ -295,16 +293,16 @@ export default function WidgetEditorScreen() {
         </Card>
       )}
 
-      {/* Widget-specific config */}
+      {/* Widget-specific settings */}
       {fields.length > 0 && (
         <Card className="gap-4">
-          <Text className="text-sm font-semibold text-gray-300">Configuration</Text>
+          <Text className="text-sm font-semibold text-white">Configuration</Text>
           {fields.map((field) => (
             <ConfigFieldRow
               key={field.key}
               field={field}
-              value={widget.config[field.key]}
-              onchange={patchConfig}
+              value={widget.settings[field.key]}
+              onchange={patchSettings}
             />
           ))}
         </Card>
@@ -312,7 +310,7 @@ export default function WidgetEditorScreen() {
 
       {/* Name */}
       <Card className="gap-3">
-        <Text className="text-sm font-semibold text-gray-300">Widget Name</Text>
+        <Text className="text-sm font-semibold text-white">Widget Name</Text>
         <Input
           label="Name"
           value={widget.name}

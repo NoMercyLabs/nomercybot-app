@@ -16,7 +16,8 @@ interface TimerDetailScreenProps {
 
 export function TimerDetailScreen({ timerId }: TimerDetailScreenProps) {
   const isNew = timerId === 'new'
-  const { data: timer, isLoading } = useTimer(timerId)
+  const numericId = isNew ? 'new' : parseInt(timerId, 10)
+  const { data: timer, isLoading } = useTimer(numericId)
   const { createTimer, updateTimer, deleteTimer, isCreating, isUpdating } = useTimers()
   const toast = useToast()
 
@@ -26,7 +27,7 @@ export function TimerDetailScreen({ timerId }: TimerDetailScreenProps) {
         await createTimer(data as TimerCreate)
         toast.success('Timer created')
       } else {
-        await updateTimer(timerId, data as TimerUpdate)
+        await updateTimer(numericId as number, data as TimerUpdate)
         toast.success('Timer saved')
       }
       router.back()
@@ -46,7 +47,7 @@ export function TimerDetailScreen({ timerId }: TimerDetailScreenProps) {
           style: 'destructive',
           onPress: async () => {
             try {
-              await deleteTimer(timerId)
+              await deleteTimer(numericId as number)
               toast.success('Timer deleted')
               router.back()
             } catch {
@@ -60,7 +61,7 @@ export function TimerDetailScreen({ timerId }: TimerDetailScreenProps) {
 
   return (
     <ErrorBoundary>
-    <View className="flex-1 bg-gray-950">
+    <View className="flex-1" style={{ backgroundColor: '#141125' }}>
       <PageHeader
         title={isNew ? 'New Timer' : 'Edit Timer'}
         showBack
@@ -77,7 +78,7 @@ export function TimerDetailScreen({ timerId }: TimerDetailScreenProps) {
         }
       />
 
-      <ScrollView className="flex-1" contentContainerClassName="px-4 py-4">
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 16 }}>
         {!isNew && isLoading ? (
           <View className="gap-4">
             {Array.from({ length: 5 }).map((_, i) => (

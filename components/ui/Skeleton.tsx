@@ -24,8 +24,8 @@ export function Skeleton({ className, count = 1 }: SkeletonProps) {
       {Array.from({ length: count }).map((_, i) => (
         <Animated.View
           key={i}
-          style={{ opacity }}
-          className={cn('rounded-lg bg-surface-overlay', className)}
+          style={{ opacity, backgroundColor: '#231D42' }}
+          className={cn('rounded-lg', className)}
         />
       ))}
     </>

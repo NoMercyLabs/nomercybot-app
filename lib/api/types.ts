@@ -6,10 +6,8 @@ export interface ApiResponse<T = unknown> {
 
 export interface PaginatedResponse<T = unknown> {
   data: T[]
-  page: number
-  pageSize: number
-  total: number
-  totalPages: number
+  nextPage: number | null
+  hasMore: boolean
 }
 
 export interface ApiError {

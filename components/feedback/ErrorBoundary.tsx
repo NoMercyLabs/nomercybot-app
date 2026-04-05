@@ -26,14 +26,18 @@ export class ErrorBoundary extends Component<Props, State> {
       if (this.props.fallback) return this.props.fallback
 
       return (
-        <View className="flex-1 items-center justify-center p-8 bg-surface gap-4">
-          <Text className="text-xl font-bold text-gray-100">Something went wrong</Text>
-          <Text className="text-gray-400 text-center text-sm">
+        <View
+          className="flex-1 items-center justify-center p-8 gap-4"
+          style={{ backgroundColor: '#141125' }}
+        >
+          <Text className="text-xl font-bold" style={{ color: '#f4f5fa' }}>Something went wrong</Text>
+          <Text className="text-center text-sm" style={{ color: '#8889a0' }}>
             {this.state.error?.message ?? 'An unexpected error occurred'}
           </Text>
           <Pressable
             onPress={() => this.setState({ hasError: false })}
-            className="rounded-lg bg-accent-600 px-6 py-3"
+            className="rounded-lg px-6 py-3"
+            style={{ backgroundColor: '#7C3AED' }}
           >
             <Text className="text-white font-medium">Try Again</Text>
           </Pressable>
