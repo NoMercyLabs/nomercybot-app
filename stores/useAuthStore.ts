@@ -1,7 +1,8 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { appStorage } from '@/lib/storage'
-import { apiClient } from '@/lib/api/client'
+import { apiClient, setAuthToken } from '@/lib/api/client'
+import { setSignalRTokenGetter, destroyAllConnections } from '@/lib/signalr/connection'
 import * as WebBrowser from 'expo-web-browser'
 import { makeRedirectUri } from 'expo-auth-session'
 import { Platform } from 'react-native'
@@ -23,7 +24,7 @@ interface AuthState {
 
   init: () => Promise<void>
   login: () => Promise<void>
-  logout: () => void
+  logout: () => Promise<void>
   handleCallback: (params: { code?: string; state?: string; token?: string; scopes?: string }) => Promise<boolean>
   completeOnboarding: () => void
   setAuth: (data: { user: User; accessToken: string; refreshToken: string; expiresIn: number; scopes?: string[] }) => void
@@ -50,59 +51,46 @@ export const useAuthStore = create<AuthState>()(
       pendingScopeUpgrade: null,
 
       init: async () => {
-        // State is rehydrated from secure storage by zustand-persist.
-        // After rehydration, restore the axios header and auto-refresh if needed.
-        const state = get()
-        if (!state.accessToken) return
-        apiClient.defaults.headers.common['Authorization'] = `Bearer ${state.accessToken}`
-        if (state.expiresAt && Date.now() > state.expiresAt - 5 * 60 * 1000) {
+        const { accessToken, expiresAt } = get()
+        if (!accessToken) return
+
+        // Register token for API calls and SignalR
+        setAuthToken(accessToken)
+        setSignalRTokenGetter(() => useAuthStore.getState().accessToken ?? '')
+
+        // Proactively refresh if expiring within 5 minutes
+        if (expiresAt && Date.now() > expiresAt - 5 * 60 * 1000) {
           await get().refreshToken()
         }
       },
 
       login: async () => {
-        set({ isLoading: true })
-        try {
-          const redirectUri = makeRedirectUri({ scheme: 'nomercybot', path: 'callback' })
-
-          if (Platform.OS === 'web') {
-            const base = typeof window !== 'undefined'
-              ? window.location.origin
-              : API_URL
-            window.location.href = `${base}/auth/twitch`
-            return
-          }
-
-          const authUrl = `${API_URL}/auth/twitch?redirect_uri=${encodeURIComponent(redirectUri)}`
-          await WebBrowser.openAuthSessionAsync(authUrl, redirectUri)
-          // Result handled by deep-link callback screen
-        } finally {
-          set({ isLoading: false })
+        const redirectUri = makeRedirectUri({ scheme: 'nomercybot', path: 'callback' })
+        if (Platform.OS === 'web') {
+          const base = typeof window !== 'undefined' ? window.location.origin : API_URL
+          window.location.href = `${base}/auth/twitch`
+          return
         }
+        const authUrl = `${API_URL}/api/auth/twitch?redirect_uri=${encodeURIComponent(redirectUri)}`
+        await WebBrowser.openAuthSessionAsync(authUrl, redirectUri)
+        // Result handled by deep-link → app/(auth)/callback.tsx
       },
 
       handleCallback: async ({ code, state: oauthState, token, scopes }) => {
         set({ isLoading: true })
         try {
           const redirectUri = makeRedirectUri({ scheme: 'nomercybot', path: 'callback' })
-
           let res: { data: { user: User; accessToken: string; refreshToken: string; expiresIn: number; scopes?: string[] } }
 
           if (token) {
             res = await apiClient.post('/auth/exchange', { token })
           } else if (code) {
-            res = await apiClient.post('/auth/twitch/callback', {
-              code,
-              state: oauthState,
-              redirectUri,
-            })
+            res = await apiClient.post('/auth/twitch/callback', { code, state: oauthState, redirectUri })
           } else {
             return false
           }
 
-          const grantedScopes = res.data.scopes ??
-            (scopes ? scopes.split(' ') : [])
-
+          const grantedScopes = res.data.scopes ?? (scopes ? scopes.split(' ') : [])
           get().setAuth({ ...res.data, scopes: grantedScopes })
           return true
         } catch {
@@ -124,7 +112,8 @@ export const useAuthStore = create<AuthState>()(
           grantedScopes: scopes ?? get().grantedScopes,
           pendingScopeUpgrade: null,
         })
-        apiClient.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`
+        setAuthToken(accessToken)
+        setSignalRTokenGetter(() => useAuthStore.getState().accessToken ?? '')
       },
 
       refreshToken: async () => {
@@ -144,15 +133,17 @@ export const useAuthStore = create<AuthState>()(
             refreshTokenValue: res.data.refreshToken,
             expiresAt: Date.now() + res.data.expiresIn * 1000,
           })
-          apiClient.defaults.headers.common['Authorization'] = `Bearer ${res.data.accessToken}`
+          setAuthToken(res.data.accessToken)
         } catch {
-          get().logout()
+          await get().logout()
         } finally {
           set({ isRefreshing: false })
         }
       },
 
-      logout: () => {
+      logout: async () => {
+        setAuthToken(null)
+        await destroyAllConnections()
         set({
           user: null,
           accessToken: null,
@@ -162,7 +153,6 @@ export const useAuthStore = create<AuthState>()(
           grantedScopes: [],
           pendingScopeUpgrade: null,
         })
-        delete apiClient.defaults.headers.common['Authorization']
       },
 
       setLoading: (loading) => set({ isLoading: loading }),
@@ -171,7 +161,6 @@ export const useAuthStore = create<AuthState>()(
         const { grantedScopes } = get()
         const missing = scopes.filter((s) => !grantedScopes.includes(s))
         if (missing.length === 0) return
-
         set({ pendingScopeUpgrade: missing })
       },
 
@@ -180,7 +169,7 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'nomercybot-auth',
       storage: createJSONStorage(() => appStorage),
-      partialize: (state: AuthState) => {
+      partialize: (state) => {
         const base = {
           user: state.user,
           expiresAt: state.expiresAt,
@@ -189,15 +178,11 @@ export const useAuthStore = create<AuthState>()(
           grantedScopes: state.grantedScopes,
         }
         if (Platform.OS === 'web') {
-          // On web, tokens are stored in localStorage (plaintext) — keep them in-memory only
+          // On web, localStorage is plaintext — keep tokens in-memory only
           return base
         }
-        // On native, SecureStore encrypts values — safe to persist tokens
-        return {
-          ...base,
-          accessToken: state.accessToken,
-          refreshTokenValue: state.refreshTokenValue,
-        }
+        // On native, SecureStore encrypts — safe to persist tokens
+        return { ...base, accessToken: state.accessToken, refreshTokenValue: state.refreshTokenValue }
       },
     },
   ),
