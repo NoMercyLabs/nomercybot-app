@@ -1,3 +1,6 @@
+/* Declare rnw layer first so react-native-web base styles have the lowest cascade priority */
+@layer rnw;
+
 @import "tailwindcss";
 @import "nativewind/theme";
 

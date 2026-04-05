@@ -1,3 +1,4 @@
+import '@/lib/web/fixRnwLayers'
 import '../global.css'
 import { useEffect } from 'react'
 import { Stack } from 'expo-router'
