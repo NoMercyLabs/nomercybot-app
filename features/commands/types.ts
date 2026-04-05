@@ -1,14 +1,22 @@
 export type PermissionLevel = 'everyone' | 'subscriber' | 'vip' | 'moderator' | 'broadcaster'
 
+export type CommandType = 'text' | 'pipeline'
+
 export interface Command {
   id: string
   name: string
-  response: string
-  cooldown: number
-  enabled: boolean
+  type?: CommandType
   permission: PermissionLevel
-  aliases: string[]
+  isEnabled?: boolean
+  enabled?: boolean
+  response?: string
+  responses?: string[]
+  pipeline?: string
+  cooldown: number
+  cooldownSeconds?: number
+  cooldownPerUser?: boolean
   description?: string
+  aliases: string[]
   usageCount?: number
   createdAt: string
   updatedAt: string
@@ -16,13 +24,19 @@ export interface Command {
 
 export interface CommandCreate {
   name: string
-  response: string
+  type?: CommandType
+  response?: string
+  responses?: string[]
+  pipeline?: string
   cooldown?: number
+  cooldownPerUser?: boolean
   permission?: PermissionLevel
   aliases?: string[]
   description?: string
+  enabled?: boolean
 }
 
 export interface CommandUpdate extends Partial<CommandCreate> {
   enabled?: boolean
+  isEnabled?: boolean
 }

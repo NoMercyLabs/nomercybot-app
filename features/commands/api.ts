@@ -11,16 +11,19 @@ export async function fetchCommand(channelId: string, name: string) {
   return res.data
 }
 
+/** Alias for fetchCommand — matches the task spec naming */
+export const getCommand = fetchCommand
+
 export async function createCommand(channelId: string, data: CommandCreate) {
   const res = await apiClient.post<Command>(`/channels/${channelId}/commands`, data)
   return res.data
 }
 
-export async function updateCommand(channelId: string, id: string, data: CommandUpdate) {
-  const res = await apiClient.put<Command>(`/channels/${channelId}/commands/${id}`, data)
+export async function updateCommand(channelId: string, name: string, data: CommandUpdate) {
+  const res = await apiClient.put<Command>(`/channels/${channelId}/commands/${name}`, data)
   return res.data
 }
 
-export async function deleteCommand(channelId: string, id: string) {
-  await apiClient.delete(`/channels/${channelId}/commands/${id}`)
+export async function deleteCommand(channelId: string, name: string) {
+  await apiClient.delete(`/channels/${channelId}/commands/${name}`)
 }
