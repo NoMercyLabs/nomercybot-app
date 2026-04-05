@@ -1,11 +1,12 @@
 import { View, Text, ScrollView, Pressable } from 'react-native'
 import { useQuery } from '@tanstack/react-query'
-import { CreditCard, Check, Zap, Star, Crown, ExternalLink } from 'lucide-react-native'
+import { CreditCard, Check, Zap, Star, Crown, ExternalLink, AlertTriangle } from 'lucide-react-native'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { useChannelStore } from '@/stores/useChannelStore'
 import { apiClient } from '@/lib/api/client'
 
@@ -65,7 +66,7 @@ function FeatureRow({ label, included }: { label: string; included: boolean }) {
 export default function BillingScreen() {
   const broadcasterId = useChannelStore((s) => s.currentChannel?.broadcasterId)
 
-  const { data: billing, isLoading } = useQuery<BillingInfo>({
+  const { data: billing, isLoading, isError, refetch } = useQuery<BillingInfo>({
     queryKey: ['billing', broadcasterId],
     queryFn: () =>
       apiClient.get(`/api/${broadcasterId}/billing`).then((r) => r.data),
@@ -85,6 +86,14 @@ export default function BillingScreen() {
           <Skeleton className="h-28 rounded-xl" />
           <Skeleton className="h-48 rounded-xl" />
         </View>
+      ) : isError ? (
+        <EmptyState
+          icon={<AlertTriangle size={32} color="#ef4444" />}
+          title="Failed to load billing"
+          message="Could not fetch subscription info."
+          actionLabel="Retry"
+          onAction={refetch}
+        />
       ) : (
         <>
           {/* Current plan */}

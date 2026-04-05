@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { View, Text, ScrollView, RefreshControl } from 'react-native'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Radio, Eye, Clock, Tag, GamepadIcon } from 'lucide-react-native'
+import { Radio, Eye, Clock, Tag, GamepadIcon, AlertTriangle } from 'lucide-react-native'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { useChannelStore } from '@/stores/useChannelStore'
 import { useSignalR } from '@/hooks/useSignalR'
 import { useToast } from '@/hooks/useToast'
@@ -53,7 +54,7 @@ export default function StreamScreen() {
   const [editCategory, setEditCategory] = useState('')
   const [isEditing, setIsEditing] = useState(false)
 
-  const { data: stream, isLoading, refetch, isRefetching } = useQuery<StreamInfo>({
+  const { data: stream, isLoading, isError, refetch, isRefetching } = useQuery<StreamInfo>({
     queryKey: ['stream', broadcasterId],
     queryFn: () =>
       apiClient.get(`/api/${broadcasterId}/stream`).then((r) => r.data),
@@ -104,6 +105,21 @@ export default function StreamScreen() {
 
   function saveEdit() {
     updateMutation.mutate({ title: editTitle, gameName: editCategory })
+  }
+
+  if (isError) {
+    return (
+      <View className="flex-1 bg-gray-950">
+        <PageHeader title="Stream Info" />
+        <EmptyState
+          icon={<AlertTriangle size={32} color="#ef4444" />}
+          title="Failed to load stream info"
+          message="Could not fetch stream data."
+          actionLabel="Retry"
+          onAction={refetch}
+        />
+      </View>
+    )
   }
 
   return (

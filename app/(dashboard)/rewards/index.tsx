@@ -1,7 +1,7 @@
 import { View, Text, ScrollView, RefreshControl, Alert } from 'react-native'
 import { router } from 'expo-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Gift, Trophy, Plus, Trash2, ChevronRight } from 'lucide-react-native'
+import { Gift, Trophy, Plus, Trash2, ChevronRight, AlertTriangle } from 'lucide-react-native'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
@@ -41,6 +41,9 @@ function RewardCard({
     <Pressable
       onPress={() => router.push(`/(dashboard)/rewards/${reward.id}` as any)}
       className="active:opacity-70"
+      accessibilityLabel={`${reward.name}, ${reward.cost.toLocaleString()} points, ${reward.isEnabled ? 'enabled' : 'disabled'}`}
+      accessibilityRole="button"
+      accessibilityHint="Opens reward editor"
     >
       <Card className="gap-3">
         <View className="flex-row items-center gap-3">
@@ -85,7 +88,7 @@ export default function RewardsScreen() {
   const toast = useToast()
   const qc = useQueryClient()
 
-  const { data: rewards = [], isLoading, refetch, isRefetching } = useQuery<Reward[]>({
+  const { data: rewards = [], isLoading, isError, refetch, isRefetching } = useQuery<Reward[]>({
     queryKey: ['rewards', broadcasterId],
     queryFn: () =>
       apiClient.get(`/api/${broadcasterId}/rewards`).then((r) => r.data),
@@ -118,6 +121,21 @@ export default function RewardsScreen() {
         onPress: () => deleteMutation.mutate(reward.id),
       },
     ])
+  }
+
+  if (isError) {
+    return (
+      <View className="flex-1 bg-gray-950">
+        <PageHeader title="Rewards" />
+        <EmptyState
+          icon={<AlertTriangle size={32} color="#ef4444" />}
+          title="Failed to load rewards"
+          message="Could not fetch channel point rewards."
+          actionLabel="Retry"
+          onAction={refetch}
+        />
+      </View>
+    )
   }
 
   return (

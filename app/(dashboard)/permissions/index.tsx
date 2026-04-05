@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { View, Text, ScrollView, RefreshControl } from 'react-native'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Shield, Plus, Trash2, ChevronDown, ChevronRight } from 'lucide-react-native'
+import { Shield, Plus, Trash2, ChevronDown, ChevronRight, AlertTriangle } from 'lucide-react-native'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
@@ -126,7 +126,7 @@ export default function PermissionsScreen() {
   const toast = useToast()
   const qc = useQueryClient()
 
-  const { data: rules = [], isLoading, refetch, isRefetching } = useQuery<PermissionRule[]>({
+  const { data: rules = [], isLoading, isError, refetch, isRefetching } = useQuery<PermissionRule[]>({
     queryKey: ['permissions', broadcasterId],
     queryFn: () =>
       apiClient.get(`/api/${broadcasterId}/permissions`).then((r) => r.data),
@@ -148,6 +148,21 @@ export default function PermissionsScreen() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['permissions', broadcasterId] }),
     onError: () => toast.error('Failed to update permission'),
   })
+
+  if (isError) {
+    return (
+      <View className="flex-1 bg-gray-950">
+        <PageHeader title="Permissions" />
+        <EmptyState
+          icon={<AlertTriangle size={32} color="#ef4444" />}
+          title="Failed to load permissions"
+          message="Could not fetch permission rules."
+          actionLabel="Retry"
+          onAction={refetch}
+        />
+      </View>
+    )
+  }
 
   return (
     <View className="flex-1 bg-gray-950">

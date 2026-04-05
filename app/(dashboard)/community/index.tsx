@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { View, Text, ScrollView, Pressable, TextInput, RefreshControl, Alert } from 'react-native'
 import { router } from 'expo-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Shield, Star, Crown, User, Ban, ChevronRight } from 'lucide-react-native'
+import { Search, Shield, Star, Crown, User, Ban, ChevronRight, AlertTriangle } from 'lucide-react-native'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
@@ -43,7 +43,13 @@ function UserRow({ user, onPress }: { user: ViewerUser; onPress: () => void }) {
   const TrustIcon = trust.icon
 
   return (
-    <Pressable onPress={onPress} className="active:opacity-70">
+    <Pressable
+      onPress={onPress}
+      className="active:opacity-70"
+      accessibilityLabel={`${user.displayName}, ${trust.label}`}
+      accessibilityRole="button"
+      accessibilityHint="Opens viewer details"
+    >
       <Card className="flex-row items-center gap-3 py-3">
         <View
           className="h-10 w-10 rounded-full items-center justify-center"
@@ -80,7 +86,7 @@ export default function CommunityScreen() {
   const toast = useToast()
   const qc = useQueryClient()
 
-  const { data: users = [], isLoading, refetch, isRefetching } = useQuery<ViewerUser[]>({
+  const { data: users = [], isLoading, isError, refetch, isRefetching } = useQuery<ViewerUser[]>({
     queryKey: ['community', broadcasterId, filterLevel],
     queryFn: () =>
       apiClient.get(`/api/${broadcasterId}/community`, {
@@ -96,6 +102,21 @@ export default function CommunityScreen() {
           u.displayName.toLowerCase().includes(search.toLowerCase()),
       )
     : users
+
+  if (isError) {
+    return (
+      <View className="flex-1 bg-gray-950">
+        <PageHeader title="Community" />
+        <EmptyState
+          icon={<AlertTriangle size={32} color="#ef4444" />}
+          title="Failed to load viewers"
+          message="Could not fetch community data."
+          actionLabel="Retry"
+          onAction={refetch}
+        />
+      </View>
+    )
+  }
 
   return (
     <View className="flex-1 bg-gray-950">
@@ -116,6 +137,7 @@ export default function CommunityScreen() {
             className="flex-1 text-sm text-gray-200"
             autoCapitalize="none"
             autoCorrect={false}
+            accessibilityLabel="Search viewers"
           />
         </View>
       </View>
@@ -135,6 +157,9 @@ export default function CommunityScreen() {
                 ? 'bg-accent-600 border-accent-600'
                 : 'border-border bg-surface-overlay'
             }`}
+            accessibilityLabel={`Filter by ${level === 'all' ? 'all trust levels' : TRUST_CONFIG[level].label}`}
+            accessibilityRole="radio"
+            accessibilityState={{ checked: filterLevel === level }}
           >
             <Text
               className={`text-xs font-medium ${

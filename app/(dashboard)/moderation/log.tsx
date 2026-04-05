@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, RefreshControl } from 'react-native'
 import { useQuery } from '@tanstack/react-query'
-import { Shield, Ban, Clock, Trash2, Eye, EyeOff } from 'lucide-react-native'
+import { Shield, Ban, Clock, Trash2, Eye, EyeOff, AlertTriangle } from 'lucide-react-native'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
@@ -42,12 +42,27 @@ function formatDate(iso: string): string {
 export default function ModLogScreen() {
   const broadcasterId = useChannelStore((s) => s.currentChannel?.broadcasterId)
 
-  const { data: entries = [], isLoading, refetch, isRefetching } = useQuery<ModLogEntry[]>({
+  const { data: entries = [], isLoading, isError, refetch, isRefetching } = useQuery<ModLogEntry[]>({
     queryKey: ['moderation', 'log', broadcasterId],
     queryFn: () =>
       apiClient.get(`/api/${broadcasterId}/moderation/log`).then((r) => r.data),
     enabled: !!broadcasterId,
   })
+
+  if (isError) {
+    return (
+      <View className="flex-1 bg-gray-950">
+        <PageHeader title="Mod Log" showBack />
+        <EmptyState
+          icon={<AlertTriangle size={32} color="#ef4444" />}
+          title="Failed to load mod log"
+          message="Could not fetch moderation history."
+          actionLabel="Retry"
+          onAction={refetch}
+        />
+      </View>
+    )
+  }
 
   return (
     <View className="flex-1 bg-gray-950">

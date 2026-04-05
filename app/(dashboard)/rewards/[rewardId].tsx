@@ -5,13 +5,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Trash2 } from 'lucide-react-native'
+import { Trash2, AlertTriangle } from 'lucide-react-native'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { Toggle } from '@/components/ui/Toggle'
 import { Button } from '@/components/ui/Button'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { useChannelStore } from '@/stores/useChannelStore'
 import { useToast } from '@/hooks/useToast'
 import { apiClient } from '@/lib/api/client'
@@ -47,7 +48,7 @@ export default function RewardDetailScreen() {
   const toast = useToast()
   const qc = useQueryClient()
 
-  const { data: reward, isLoading } = useQuery<Reward>({
+  const { data: reward, isLoading, isError, refetch } = useQuery<Reward>({
     queryKey: ['rewards', broadcasterId, rewardId],
     queryFn: () =>
       apiClient.get(`/api/${broadcasterId}/rewards/${rewardId}`).then((r) => r.data),
@@ -119,6 +120,21 @@ export default function RewardDetailScreen() {
           <Skeleton className="h-14 rounded-xl" />
           <Skeleton className="h-32 rounded-xl" />
         </View>
+      </View>
+    )
+  }
+
+  if (isError) {
+    return (
+      <View className="flex-1 bg-gray-950">
+        <PageHeader title="Reward" showBack />
+        <EmptyState
+          icon={<AlertTriangle size={32} color="#ef4444" />}
+          title="Failed to load reward"
+          message="Could not fetch reward details."
+          actionLabel="Retry"
+          onAction={refetch}
+        />
       </View>
     )
   }

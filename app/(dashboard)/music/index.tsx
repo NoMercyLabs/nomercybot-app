@@ -2,7 +2,7 @@ import { View, Text, ScrollView, Image, Pressable, RefreshControl } from 'react-
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  Music, SkipForward, Pause, Play, Volume2, Trash2, ChevronUp, ChevronDown,
+  Music, SkipForward, Pause, Play, Volume2, Trash2, ChevronUp, ChevronDown, AlertTriangle,
 } from 'lucide-react-native'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Card } from '@/components/ui/Card'
@@ -163,16 +163,31 @@ function QueueItem({
       </View>
       <View className="flex-row items-center gap-1">
         {index > 0 && (
-          <Pressable onPress={onMoveUp} className="p-1 rounded active:bg-surface-overlay">
+          <Pressable
+            onPress={onMoveUp}
+            className="p-1 rounded active:bg-surface-overlay"
+            accessibilityLabel={`Move ${track.title} up`}
+            accessibilityRole="button"
+          >
             <ChevronUp size={14} color="#8889a0" />
           </Pressable>
         )}
         {index < total - 1 && (
-          <Pressable onPress={onMoveDown} className="p-1 rounded active:bg-surface-overlay">
+          <Pressable
+            onPress={onMoveDown}
+            className="p-1 rounded active:bg-surface-overlay"
+            accessibilityLabel={`Move ${track.title} down`}
+            accessibilityRole="button"
+          >
             <ChevronDown size={14} color="#8889a0" />
           </Pressable>
         )}
-        <Pressable onPress={onRemove} className="p-1 rounded active:bg-surface-overlay">
+        <Pressable
+          onPress={onRemove}
+          className="p-1 rounded active:bg-surface-overlay"
+          accessibilityLabel={`Remove ${track.title} from queue`}
+          accessibilityRole="button"
+        >
           <Trash2 size={14} color="#ef4444" />
         </Pressable>
       </View>
@@ -186,7 +201,7 @@ export default function MusicScreen() {
   const qc = useQueryClient()
   const { on, off } = useSignalR()
 
-  const { data: musicState, isLoading, refetch, isRefetching } = useQuery<MusicStatePayload>({
+  const { data: musicState, isLoading, isError, refetch, isRefetching } = useQuery<MusicStatePayload>({
     queryKey: ['music', broadcasterId],
     queryFn: () =>
       apiClient.get(`/api/${broadcasterId}/music/state`).then((r) => r.data),
@@ -243,6 +258,21 @@ export default function MusicScreen() {
   })
 
   const queue = musicState?.queue ?? []
+
+  if (isError) {
+    return (
+      <View className="flex-1 bg-gray-950">
+        <PageHeader title="Music" />
+        <EmptyState
+          icon={<AlertTriangle size={32} color="#ef4444" />}
+          title="Failed to load music"
+          message="Could not fetch playback state."
+          actionLabel="Retry"
+          onAction={refetch}
+        />
+      </View>
+    )
+  }
 
   return (
     <View className="flex-1 bg-gray-950">

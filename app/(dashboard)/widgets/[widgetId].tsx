@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { View, Text, ScrollView, Pressable, Alert } from 'react-native'
 import { useLocalSearchParams, router } from 'expo-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Copy, ExternalLink, Trash2 } from 'lucide-react-native'
+import { Copy, ExternalLink, Trash2, AlertTriangle } from 'lucide-react-native'
 import * as Clipboard from 'expo-clipboard'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Card } from '@/components/ui/Card'
@@ -11,6 +11,7 @@ import { Toggle } from '@/components/ui/Toggle'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { useChannelStore } from '@/stores/useChannelStore'
 import { useToast } from '@/hooks/useToast'
 import { apiClient } from '@/lib/api/client'
@@ -156,7 +157,7 @@ export default function WidgetEditorScreen() {
   const toast = useToast()
   const qc = useQueryClient()
 
-  const { data: widget, isLoading } = useQuery<Widget>({
+  const { data: widget, isLoading, isError, refetch } = useQuery<Widget>({
     queryKey: ['widgets', broadcasterId, widgetId],
     queryFn: () =>
       apiClient.get(`/api/${broadcasterId}/widgets/${widgetId}`).then((r) => r.data),
@@ -215,10 +216,17 @@ export default function WidgetEditorScreen() {
     )
   }
 
-  if (!widget) {
+  if (isError || !widget) {
     return (
-      <View className="flex-1 bg-gray-950 items-center justify-center">
-        <Text className="text-gray-500">Widget not found</Text>
+      <View className="flex-1 bg-gray-950">
+        <PageHeader title="Widget Editor" showBack />
+        <EmptyState
+          icon={<AlertTriangle size={32} color="#ef4444" />}
+          title={isError ? 'Failed to load widget' : 'Widget not found'}
+          message={isError ? 'Could not fetch widget data.' : undefined}
+          actionLabel={isError ? 'Retry' : undefined}
+          onAction={isError ? refetch : undefined}
+        />
       </View>
     )
   }

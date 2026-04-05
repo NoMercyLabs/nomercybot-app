@@ -116,9 +116,14 @@ function ChatMessageRow({
       ? msg.fragments
       : [{ type: 'text', text: msg.message }]
 
+  const plainText = fragments.map((f) => f.text).join('')
+
   return (
     <Pressable
       onLongPress={() => !msg.isDeleted && onLongPress()}
+      accessibilityLabel={`${msg.displayName ?? msg.username}: ${plainText}`}
+      accessibilityHint={msg.isDeleted ? undefined : 'Long press for moderation options'}
+      accessibilityRole="text"
       className={[
         'flex-row py-0.5 px-1 rounded',
         isHighlighted && 'bg-yellow-900/20 border-l-2 border-yellow-500',
@@ -351,6 +356,8 @@ export function ChatScreen() {
         <Pressable
           onPress={scrollToBottom}
           className="absolute bottom-20 right-4 flex-row items-center gap-1 rounded-full bg-accent-600 px-3 py-1.5 shadow-lg"
+          accessibilityLabel="Scroll to new messages"
+          accessibilityRole="button"
         >
           <ChevronDown size={14} color="white" />
           <Text className="text-xs font-medium text-white">New messages</Text>
@@ -366,10 +373,13 @@ export function ChatScreen() {
           onChangeText={setInput}
           returnKeyType="send"
           onSubmitEditing={handleSend}
+          accessibilityLabel="Chat message input"
         />
         <Pressable
           onPress={handleSend}
           className="rounded-lg bg-accent-600 p-2.5 active:bg-accent-700"
+          accessibilityLabel="Send message"
+          accessibilityRole="button"
         >
           <Send size={16} color="white" />
         </Pressable>

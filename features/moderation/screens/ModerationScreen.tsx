@@ -37,7 +37,14 @@ export function ModerationScreen() {
       {SECTIONS.map((s) => {
         const Icon = s.icon
         return (
-          <Pressable key={s.title} onPress={() => router.push(s.href as any)} className="active:opacity-70">
+          <Pressable
+            key={s.title}
+            onPress={() => router.push(s.href as any)}
+            className="active:opacity-70"
+            accessibilityLabel={s.title}
+            accessibilityHint={s.description}
+            accessibilityRole="button"
+          >
             <Card className="flex-row items-center gap-3">
               <View
                 className="h-10 w-10 rounded-xl items-center justify-center"

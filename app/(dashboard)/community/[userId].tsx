@@ -1,13 +1,14 @@
 import { View, Text, ScrollView, Alert } from 'react-native'
 import { useLocalSearchParams, router } from 'expo-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Ban, Clock, MessageSquare, Star, Shield, Crown, User } from 'lucide-react-native'
+import { Ban, Clock, MessageSquare, Star, Shield, Crown, User, AlertTriangle } from 'lucide-react-native'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { useChannelStore } from '@/stores/useChannelStore'
 import { useToast } from '@/hooks/useToast'
 import { apiClient } from '@/lib/api/client'
@@ -67,7 +68,7 @@ export default function ViewerDetailScreen() {
   const toast = useToast()
   const qc = useQueryClient()
 
-  const { data: user, isLoading } = useQuery<ViewerUser>({
+  const { data: user, isLoading, isError, refetch } = useQuery<ViewerUser>({
     queryKey: ['community', broadcasterId, userId],
     queryFn: () =>
       apiClient.get(`/api/${broadcasterId}/community/${userId}`).then((r) => r.data),
@@ -136,10 +137,17 @@ export default function ViewerDetailScreen() {
     )
   }
 
-  if (!user) {
+  if (isError || !user) {
     return (
-      <View className="flex-1 bg-gray-950 items-center justify-center">
-        <Text className="text-gray-500">User not found</Text>
+      <View className="flex-1 bg-gray-950">
+        <PageHeader title="Viewer" showBack />
+        <EmptyState
+          icon={<AlertTriangle size={32} color="#ef4444" />}
+          title={isError ? 'Failed to load user' : 'User not found'}
+          message={isError ? 'Could not fetch viewer data.' : undefined}
+          actionLabel={isError ? 'Retry' : undefined}
+          onAction={isError ? refetch : undefined}
+        />
       </View>
     )
   }

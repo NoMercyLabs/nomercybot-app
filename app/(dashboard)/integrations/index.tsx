@@ -1,11 +1,12 @@
 import { View, Text, ScrollView, RefreshControl, Linking } from 'react-native'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Music, ExternalLink, RefreshCw, Trash2 } from 'lucide-react-native'
+import { Music, ExternalLink, RefreshCw, Trash2, AlertTriangle } from 'lucide-react-native'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { useChannelStore } from '@/stores/useChannelStore'
 import { useToast } from '@/hooks/useToast'
 import { apiClient } from '@/lib/api/client'
@@ -35,7 +36,7 @@ export default function IntegrationsScreen() {
   const toast = useToast()
   const qc = useQueryClient()
 
-  const { data: connections = [], isLoading, refetch, isRefetching } = useQuery<
+  const { data: connections = [], isLoading, isError, refetch, isRefetching } = useQuery<
     { provider: string; connected: boolean; username?: string; expiresAt?: string }[]
   >({
     queryKey: ['settings', 'connections', broadcasterId],
@@ -75,6 +76,21 @@ export default function IntegrationsScreen() {
     },
     onError: () => toast.error('Failed to disconnect'),
   })
+
+  if (isError) {
+    return (
+      <View className="flex-1 bg-gray-950">
+        <PageHeader title="Integrations" />
+        <EmptyState
+          icon={<AlertTriangle size={32} color="#ef4444" />}
+          title="Failed to load integrations"
+          message="Could not fetch connection status."
+          actionLabel="Retry"
+          onAction={refetch}
+        />
+      </View>
+    )
+  }
 
   return (
     <View className="flex-1 bg-gray-950">

@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, Alert, RefreshControl } from 'react-native'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Ban, Clock, UserCheck } from 'lucide-react-native'
+import { Ban, Clock, UserCheck, AlertTriangle } from 'lucide-react-native'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
@@ -77,7 +77,7 @@ export default function BansScreen() {
   const toast = useToast()
   const qc = useQueryClient()
 
-  const { data: bans = [], isLoading, refetch, isRefetching } = useQuery<BanEntry[]>({
+  const { data: bans = [], isLoading, isError, refetch, isRefetching } = useQuery<BanEntry[]>({
     queryKey: ['moderation', 'bans', broadcasterId],
     queryFn: () =>
       apiClient.get(`/api/${broadcasterId}/moderation/bans`).then((r) => r.data),
@@ -102,6 +102,21 @@ export default function BansScreen() {
         onPress: () => unbanMutation.mutate(ban.userId),
       },
     ])
+  }
+
+  if (isError) {
+    return (
+      <View className="flex-1 bg-gray-950">
+        <PageHeader title="Ban List" showBack />
+        <EmptyState
+          icon={<AlertTriangle size={32} color="#ef4444" />}
+          title="Failed to load bans"
+          message="Could not fetch the ban list."
+          actionLabel="Retry"
+          onAction={refetch}
+        />
+      </View>
+    )
   }
 
   return (
