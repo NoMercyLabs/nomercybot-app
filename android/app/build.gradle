@@ -89,7 +89,7 @@ android {
 
     namespace "com.nomercybot"
     defaultConfig {
-        applicationId "com.nomercybot"
+        applicationId "tv.nomercy.bot"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
