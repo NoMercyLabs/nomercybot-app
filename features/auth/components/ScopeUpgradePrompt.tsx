@@ -25,8 +25,11 @@ export function ScopeUpgradePrompt() {
 
     const redirectUri = makeRedirectUri({ scheme: 'nomercybot', path: 'callback' })
     const authUrl = `${API_URL}/auth/twitch?scopes=${scopeParam}&redirect_uri=${encodeURIComponent(redirectUri)}`
-    await WebBrowser.openAuthSessionAsync(authUrl, redirectUri)
-    dismissScopeUpgrade()
+    const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri)
+    if (result.type === 'success') {
+      dismissScopeUpgrade()
+    }
+    // On cancel/dismiss, keep the modal open so the user can retry
   }
 
   return (

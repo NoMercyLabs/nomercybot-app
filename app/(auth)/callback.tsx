@@ -54,8 +54,7 @@ export default function CallbackScreen() {
     }
 
     processCallback()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [handleCallback, onboardingComplete, params.code, params.error, params.error_description, params.scope, params.state, params.token, router])
 
   if (errorMessage) {
     return (

@@ -15,6 +15,7 @@ interface AuthState {
   refreshTokenValue: string | null
   expiresAt: number | null
   isLoading: boolean
+  isRefreshing: boolean
   isAuthenticated: boolean
   onboardingComplete: boolean
   grantedScopes: string[]
@@ -42,6 +43,7 @@ export const useAuthStore = create<AuthState>()(
       refreshTokenValue: null,
       expiresAt: null,
       isLoading: false,
+      isRefreshing: false,
       isAuthenticated: false,
       onboardingComplete: false,
       grantedScopes: [],
@@ -129,7 +131,7 @@ export const useAuthStore = create<AuthState>()(
         const { refreshTokenValue } = get()
         if (!refreshTokenValue) return
 
-        set({ isLoading: true })
+        set({ isRefreshing: true })
         try {
           const res = await apiClient.post<{
             accessToken: string
@@ -146,7 +148,7 @@ export const useAuthStore = create<AuthState>()(
         } catch {
           get().logout()
         } finally {
-          set({ isLoading: false })
+          set({ isRefreshing: false })
         }
       },
 
@@ -178,15 +180,25 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'nomercybot-auth',
       storage: createJSONStorage(() => appStorage),
-      partialState: (state: AuthState) => ({
-        user: state.user,
-        accessToken: state.accessToken,
-        refreshTokenValue: state.refreshTokenValue,
-        expiresAt: state.expiresAt,
-        isAuthenticated: state.isAuthenticated,
-        onboardingComplete: state.onboardingComplete,
-        grantedScopes: state.grantedScopes,
-      }),
-    } as any,
+      partialize: (state: AuthState) => {
+        const base = {
+          user: state.user,
+          expiresAt: state.expiresAt,
+          isAuthenticated: state.isAuthenticated,
+          onboardingComplete: state.onboardingComplete,
+          grantedScopes: state.grantedScopes,
+        }
+        if (Platform.OS === 'web') {
+          // On web, tokens are stored in localStorage (plaintext) — keep them in-memory only
+          return base
+        }
+        // On native, SecureStore encrypts values — safe to persist tokens
+        return {
+          ...base,
+          accessToken: state.accessToken,
+          refreshTokenValue: state.refreshTokenValue,
+        }
+      },
+    },
   ),
 )
