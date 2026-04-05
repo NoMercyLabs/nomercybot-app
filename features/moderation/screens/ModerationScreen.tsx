@@ -108,9 +108,12 @@ function AutoModTab() {
   const addToast = useNotificationStore((s) => s.addToast)
   const queryClient = useQueryClient()
 
-  const { data, isLoading, refetch } = useQuery<AutomodConfig>({
+  const { data, isLoading, isRefetching, refetch } = useQuery<AutomodConfig>({
     queryKey: ['channel', channelId, 'automod'],
-    queryFn: () => moderationApi.getAutomodConfig(channelId!),
+    queryFn: () => {
+      if (!channelId) throw new Error('No channel selected')
+      return moderationApi.getAutomodConfig(channelId)
+    },
     enabled: !!channelId,
   })
 
@@ -129,8 +132,10 @@ function AutoModTab() {
   const [newPhrase, setNewPhrase] = useState('')
 
   const saveMutation = useMutation({
-    mutationFn: (form: AutomodFormValues) =>
-      moderationApi.saveAutomodConfig(channelId!, formToConfig(form)),
+    mutationFn: (form: AutomodFormValues) => {
+      if (!channelId) throw new Error('No channel selected')
+      return moderationApi.saveAutomodConfig(channelId, formToConfig(form))
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['channel', channelId, 'automod'] })
       addToast('success', 'AutoMod settings saved')
@@ -172,7 +177,7 @@ function AutoModTab() {
     <ScrollView
       className="flex-1"
       contentContainerClassName="p-4 gap-4"
-      refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} />}
+      refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
     >
       {/* Link Filter */}
       <Card className="p-4 gap-4">
@@ -397,14 +402,20 @@ function BansTab() {
   const queryClient = useQueryClient()
   const [confirmUnban, setConfirmUnban] = useState<ModerationBan | null>(null)
 
-  const { data: bans = [], isLoading, refetch } = useQuery<ModerationBan[]>({
+  const { data: bans = [], isLoading, isRefetching, refetch } = useQuery<ModerationBan[]>({
     queryKey: ['channel', channelId, 'moderation-bans'],
-    queryFn: () => moderationApi.getModerationBans(channelId!),
+    queryFn: () => {
+      if (!channelId) throw new Error('No channel selected')
+      return moderationApi.getModerationBans(channelId)
+    },
     enabled: !!channelId,
   })
 
   const unbanMutation = useMutation({
-    mutationFn: (userId: string) => moderationApi.unbanUser(channelId!, userId),
+    mutationFn: (userId: string) => {
+      if (!channelId) throw new Error('No channel selected')
+      return moderationApi.unbanUser(channelId, userId)
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['channel', channelId, 'moderation-bans'] })
       addToast('success', 'User unbanned')
@@ -418,7 +429,7 @@ function BansTab() {
       <ScrollView
         className="flex-1"
         contentContainerClassName="p-4 gap-3"
-        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} />}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
       >
         {isLoading ? (
           <View className="gap-3">
@@ -500,7 +511,10 @@ function ModLogTab() {
 
   const { data: pageResult, isLoading, isFetching, refetch } = useQuery({
     queryKey: ['channel', channelId, 'moderation-log', page],
-    queryFn: () => moderationApi.getModerationLog(channelId!, { page, take: 50 }),
+    queryFn: () => {
+      if (!channelId) throw new Error('No channel selected')
+      return moderationApi.getModerationLog(channelId, { page, take: 50 })
+    },
     enabled: !!channelId,
   })
 
@@ -514,11 +528,19 @@ function ModLogTab() {
     setHasMore(pageResult.page < pageResult.totalPages)
   }, [pageResult, page])
 
+  // Fix stale closure: use an effect watching page so that when page resets to 1
+  // via handleRefresh, the refetch fires after the new page value is committed.
+  useEffect(() => {
+    if (page === 1) {
+      refetch()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page])
+
   function handleRefresh() {
-    setPage(1)
     setEntries([])
     setHasMore(false)
-    refetch()
+    setPage(1) // triggers the useEffect above to refetch with page=1
   }
 
   function handleLoadMore() {

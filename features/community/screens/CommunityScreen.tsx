@@ -16,31 +16,13 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Button } from '@/components/ui/Button'
 import { useChannelStore } from '@/stores/useChannelStore'
+import { getInitials } from '@/lib/utils/string'
+import { formatRelativeTime } from '@/lib/utils/format'
 import { communityApi } from '../api'
 import { TrustBadge } from '../components/TrustBadge'
 import type { CommunityUser, BannedUser } from '../types'
 
 type Tab = 'users' | 'bans'
-
-function getInitials(name: string) {
-  return name
-    .split(' ')
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join('')
-    .toUpperCase()
-}
-
-function formatRelativeTime(iso: string) {
-  const diff = Date.now() - new Date(iso).getTime()
-  const mins = Math.floor(diff / 60_000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins}m ago`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
-  const days = Math.floor(hrs / 24)
-  return `${days}d ago`
-}
 
 interface UserRowProps {
   user: CommunityUser
@@ -243,7 +225,7 @@ function BansTab({ channelId }: { channelId: string }) {
         ) : null
       }
       ListEmptyComponent={
-        !isLoading ? (
+        !isLoading && !isRefetching && data !== undefined ? (
           <EmptyState
             icon={<Ban size={40} color="#6b7280" />}
             title="No bans"

@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/Button'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { ConfirmDialog } from '@/components/feedback/ConfirmDialog'
 import { useChannelStore } from '@/stores/useChannelStore'
+import { useNotificationStore } from '@/stores/useNotificationStore'
+import { getInitials } from '@/lib/utils/string'
 import { communityApi } from '@/features/community/api'
 import { TrustBadge } from '@/features/community/components/TrustBadge'
 import type { TrustLevel } from '@/features/community/types'
@@ -20,15 +22,6 @@ const TRUST_OPTIONS: { label: string; value: TrustLevel }[] = [
   { label: 'Moderator', value: 'moderator' },
   { label: 'Broadcaster', value: 'broadcaster' },
 ]
-
-function getInitials(name: string) {
-  return name
-    .split(' ')
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join('')
-    .toUpperCase()
-}
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, {
@@ -82,6 +75,7 @@ export default function ViewerDetailScreen() {
   const { userId } = useLocalSearchParams<{ userId: string }>()
   const channelId = useChannelStore((s) => s.currentChannel?.id) ?? ''
   const queryClient = useQueryClient()
+  const addToast = useNotificationStore((s) => s.addToast)
 
   const [banDialogVisible, setBanDialogVisible] = useState(false)
   const [unbanDialogVisible, setUnbanDialogVisible] = useState(false)
@@ -101,6 +95,7 @@ export default function ViewerDetailScreen() {
         queryKey: ['channel', channelId, 'community', 'user', userId],
       })
     },
+    onError: () => addToast('error', 'Failed to update trust level'),
   })
 
   const { mutate: ban, isPending: isBanning } = useMutation({
@@ -115,6 +110,7 @@ export default function ViewerDetailScreen() {
         queryKey: ['channel', channelId, 'community', 'bans'],
       })
     },
+    onError: () => addToast('error', 'Failed to ban user'),
   })
 
   const { mutate: unban, isPending: isUnbanning } = useMutation({
@@ -128,6 +124,7 @@ export default function ViewerDetailScreen() {
         queryKey: ['channel', channelId, 'community', 'bans'],
       })
     },
+    onError: () => addToast('error', 'Failed to unban user'),
   })
 
   if (isLoading) {

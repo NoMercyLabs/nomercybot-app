@@ -17,7 +17,7 @@ export interface CommunityUser {
 export interface BanRecord {
   id: string
   bannedBy: string
-  reason: string
+  reason?: string
   bannedAt: string
   unbannedAt?: string
 }
