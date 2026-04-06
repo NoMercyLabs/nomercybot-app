@@ -20,7 +20,7 @@ import {
 } from 'lucide-react-native'
 
 export default function DashboardLayout() {
-  const { isAuthenticated, isLoading, isHydrated } = useAuth()
+  const { isAuthenticated, isLoading } = useAuth()
   const { currentChannel } = useChannel()
   const { isDesktop, isTablet } = useBreakpoint()
   const { setSidebarCollapsed } = useAppStore()
@@ -34,9 +34,7 @@ export default function DashboardLayout() {
     }
   }, [isTablet, isDesktop, setSidebarCollapsed])
 
-  // Wait for Zustand persist to restore auth from storage before making
-  // routing decisions — prevents redirect-to-login on every page reload
-  if (isLoading || !isHydrated) return null
+  if (isLoading) return null
 
   if (!isAuthenticated) return <Redirect href="/(auth)/login" />
   if (!currentChannel) return <Redirect href="/(auth)/onboarding" />
