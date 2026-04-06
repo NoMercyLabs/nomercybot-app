@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Dimensions } from 'react-native'
+import { Dimensions, Platform } from 'react-native'
 import * as Device from 'expo-device'
 
 type Breakpoint = 'sm' | 'md' | 'lg' | 'xl' | '2xl'
@@ -20,11 +20,25 @@ function getBreakpoint(width: number): Breakpoint {
   return 'sm'
 }
 
+function getWindowWidth(): number {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    return window.innerWidth
+  }
+  return Dimensions.get('window').width
+}
+
 export function useBreakpoint() {
-  const [width, setWidth] = useState(Dimensions.get('window').width)
+  const [width, setWidth] = useState(getWindowWidth)
   const breakpoint = getBreakpoint(width)
 
   useEffect(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const handleResize = () => setWidth(window.innerWidth)
+      window.addEventListener('resize', handleResize)
+      // Sync in case width changed between first render and effect
+      handleResize()
+      return () => window.removeEventListener('resize', handleResize)
+    }
     const subscription = Dimensions.addEventListener('change', ({ window }) => {
       setWidth(window.width)
     })

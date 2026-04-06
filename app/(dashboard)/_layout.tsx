@@ -45,7 +45,15 @@ export default function DashboardLayout() {
     return (
       <View className="flex-1 flex-row" style={{ backgroundColor: '#0D0B1A' }}>
         <Sidebar />
-        <View className="flex-1" style={{ backgroundColor: '#141125' }}>
+        <View
+          className="flex-1"
+          style={{
+            backgroundColor: '#141125',
+            minWidth: 0,
+            // Prevent content wider than viewport from causing character-by-character text wrap
+            ...(Platform.OS === 'web' ? { overflowX: 'hidden' } as any : {}),
+          }}
+        >
           <View
             className="flex-row items-center justify-between px-6 py-3"
             style={{ borderBottomWidth: 1, borderBottomColor: '#1e1a35' }}
