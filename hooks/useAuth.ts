@@ -5,7 +5,6 @@ import type { User } from '@/types/auth'
 interface AuthContextValue {
   isAuthenticated: boolean
   isLoading: boolean
-  isHydrated: boolean
   user: User | null
   accessToken: string | null
   login: () => Promise<void>
@@ -27,7 +26,6 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const isLoading = useAuthStore((s) => s.isLoading)
-  const isHydrated = useAuthStore((s) => s._hasHydrated)
   const user = useAuthStore((s) => s.user)
   const accessToken = useAuthStore((s) => s.accessToken)
   const login = useAuthStore((s) => s.login)
@@ -40,7 +38,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   return createElement(
     AuthContext.Provider,
-    { value: { isAuthenticated, isLoading, isHydrated, user, accessToken, login, logout } },
+    { value: { isAuthenticated, isLoading, user, accessToken, login, logout } },
     children,
   )
 }
