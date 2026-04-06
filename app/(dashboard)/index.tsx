@@ -160,18 +160,18 @@ export default function DashboardScreen() {
           isPhone ? (
             <View className="gap-3">
               <View className="flex-row gap-3">
-                <Skeleton className="h-24 rounded-xl" style={{ flex: 1 }} />
-                <Skeleton className="h-24 rounded-xl" style={{ flex: 1 }} />
+                <Skeleton className="h-24 flex-1 rounded-xl" />
+                <Skeleton className="h-24 flex-1 rounded-xl" />
               </View>
               <View className="flex-row gap-3">
-                <Skeleton className="h-24 rounded-xl" style={{ flex: 1 }} />
-                <Skeleton className="h-24 rounded-xl" style={{ flex: 1 }} />
+                <Skeleton className="h-24 flex-1 rounded-xl" />
+                <Skeleton className="h-24 flex-1 rounded-xl" />
               </View>
             </View>
           ) : (
             <View className="flex-row gap-4">
               {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-24 rounded-xl" style={{ flex: 1 }} />
+                <Skeleton key={i} className="h-24 flex-1 rounded-xl" />
               ))}
             </View>
           )

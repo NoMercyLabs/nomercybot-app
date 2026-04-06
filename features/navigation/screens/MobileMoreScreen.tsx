@@ -3,8 +3,8 @@ import { useRouter } from 'expo-router'
 import { useAuthStore } from '@/stores/useAuthStore'
 import {
   Gift, Key, Shield, Radio, Users,
-  Music, Layers, Link, Zap, CreditCard,
-  Database, Timer, Workflow, ShieldCheck,
+  Layers, Link, Zap, CreditCard,
+  Database, AlarmClock, GitBranch, ShieldCheck,
   Settings, ChevronRight,
   type LucideIcon,
 } from 'lucide-react-native'
@@ -22,8 +22,8 @@ const MORE_SECTIONS: { title: string; items: NavItem[] }[] = [
     items: [
       { label: 'Rewards', href: '/(dashboard)/rewards', Icon: Gift, color: '#a78bfa' },
       { label: 'Permissions', href: '/(dashboard)/permissions', Icon: Key, color: '#60a5fa' },
-      { label: 'Timers', href: '/(dashboard)/timers', Icon: Timer, color: '#4ade80' },
-      { label: 'Pipelines', href: '/(dashboard)/pipelines', Icon: Workflow, color: '#f59e0b' },
+      { label: 'Timers', href: '/(dashboard)/timers', Icon: AlarmClock, color: '#4ade80' },
+      { label: 'Pipelines', href: '/(dashboard)/pipelines', Icon: GitBranch, color: '#f59e0b' },
     ],
   },
   {
