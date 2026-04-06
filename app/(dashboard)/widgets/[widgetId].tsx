@@ -15,6 +15,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { useChannelStore } from '@/stores/useChannelStore'
 import { useToast } from '@/hooks/useToast'
 import { widgetsApi } from '@/features/widgets/api'
+import { useLoadingTimeout } from '@/hooks/useLoadingTimeout'
 import { WIDGET_TYPE_LABELS } from '@/features/widgets/types'
 import type { Widget, WidgetType } from '@/features/widgets/types'
 
@@ -163,6 +164,9 @@ export default function WidgetEditorScreen() {
     enabled: !!channelId && !!widgetId,
   })
 
+  const timedOut = useLoadingTimeout(isLoading)
+  const showSkeleton = isLoading && !isError && !timedOut
+
   const updateMutation = useMutation({
     mutationFn: (patch: { name?: string; isEnabled?: boolean; settings?: Record<string, unknown> }) =>
       widgetsApi.update(channelId!, widgetId!, patch),
@@ -201,7 +205,7 @@ export default function WidgetEditorScreen() {
     toast.success('URL copied!')
   }
 
-  if (isLoading) {
+  if (showSkeleton) {
     return (
       <View style={{ flex: 1, backgroundColor: '#141125' }}>
         <PageHeader title="Widget Editor" showBack />
@@ -214,7 +218,7 @@ export default function WidgetEditorScreen() {
     )
   }
 
-  if (isError || !widget) {
+  if (isError || timedOut || !widget) {
     return (
       <View style={{ flex: 1, backgroundColor: '#141125' }}>
         <PageHeader title="Widget Editor" showBack />

@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { ErrorBoundary } from '@/components/feedback/ErrorBoundary'
 import { getMusicConfig, updateMusicConfig } from '@/features/music/api'
 import type { MusicConfig } from '@/features/music/types'
+import { useLoadingTimeout } from '@/hooks/useLoadingTimeout'
 
 const TRUST_LEVEL_LABELS: Record<string, string> = {
   everyone: 'Everyone',
@@ -42,11 +43,14 @@ export default function MusicSettingsScreen() {
   const channelId = useChannelStore((s) => s.currentChannel?.id ?? '')
   const qc = useQueryClient()
 
-  const { data: config, isLoading, isRefetching, refetch } = useQuery<MusicConfig>({
+  const { data: config, isLoading, isError, isRefetching, refetch } = useQuery<MusicConfig>({
     queryKey: ['music', 'config', channelId],
     queryFn: () => getMusicConfig(channelId),
     enabled: !!channelId,
   })
+
+  const timedOut = useLoadingTimeout(isLoading)
+  const showSkeleton = isLoading && !isError && !timedOut
 
   const [isEnabled, setIsEnabled] = useState(true)
   const [allowSpotify, setAllowSpotify] = useState(true)
@@ -89,7 +93,7 @@ export default function MusicSettingsScreen() {
         <View className="px-5 pt-4 gap-4">
           {/* Provider */}
           <SectionCard title="Provider">
-            {isLoading ? (
+            {showSkeleton ? (
               <Skeleton className="h-6 w-32 rounded" />
             ) : (
               <View className="flex-row items-center gap-2">

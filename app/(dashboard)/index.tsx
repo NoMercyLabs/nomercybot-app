@@ -157,9 +157,9 @@ export default function DashboardScreen() {
 
         {/* Stat cards */}
         {showSkeleton ? (
-          <View className="flex-row gap-4">
+          <View className="flex-row flex-wrap gap-4">
             {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-24 flex-1 rounded-xl" />
+              <Skeleton key={i} className="h-24 flex-1 rounded-xl min-w-[130px]" />
             ))}
           </View>
         ) : (
@@ -168,32 +168,24 @@ export default function DashboardScreen() {
               icon={<Users size={16} color="#a78bfa" />}
               label="Peak Viewers"
               value={formatNumber(stats?.viewerCount ?? 0)}
-              delta="+12% vs last"
-              deltaPositive
               accentColor="#7C3AED"
             />
             <StatCard
               icon={<UserPlus size={16} color="#60a5fa" />}
               label="New Followers"
               value={formatNumber(stats?.followerCount ?? 0)}
-              delta="+8 this hour"
-              deltaPositive
               accentColor="#3b82f6"
             />
             <StatCard
               icon={<Star size={16} color="#4ade80" />}
               label="Subscribers"
               value={formatNumber(stats?.subscriberCount ?? 0)}
-              delta="+3 today"
-              deltaPositive
               accentColor="#22c55e"
             />
             <StatCard
               icon={<Terminal size={16} color="#fbbf24" />}
               label="Commands Used"
               value={formatNumber(stats?.commandsUsed ?? 0)}
-              delta="+22% vs avg"
-              deltaPositive
               accentColor="#f59e0b"
             />
           </View>

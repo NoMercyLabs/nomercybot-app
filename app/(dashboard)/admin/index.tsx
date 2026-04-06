@@ -111,6 +111,7 @@ export default function AdminDashboardScreen() {
   })
 
   const timedOut = useLoadingTimeout(isLoading)
+  const showSkeleton = isLoading && !isError && !timedOut
   const overallStatus = data?.systemStatus ?? 'healthy'
   const { color: statusColor, Icon: StatusIcon } = statusConfig[overallStatus]
 
@@ -118,7 +119,7 @@ export default function AdminDashboardScreen() {
     <View className="px-5 pt-4 gap-5">
       {isError || timedOut ? (
         <ErrorState title="Unable to load admin stats" onRetry={refetch} />
-      ) : isLoading ? (
+      ) : showSkeleton ? (
         <Skeleton className="h-24 w-full" count={3} />
       ) : (
         <>

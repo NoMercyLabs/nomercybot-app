@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Dimensions, Platform } from 'react-native'
+import { Dimensions } from 'react-native'
 import * as Device from 'expo-device'
 
 type Breakpoint = 'sm' | 'md' | 'lg' | 'xl' | '2xl'
@@ -31,14 +31,13 @@ export function useBreakpoint() {
     return () => subscription.remove()
   }, [])
 
-  const isWeb = Platform.OS === 'web'
-
+  // Breakpoints are width-based across all platforms.
+  // isDesktop must NOT default to true on web — a 360px Android browser is not a desktop.
   const isTablet =
-    (!isWeb && Device.deviceType === Device.DeviceType.TABLET) ||
-    (Platform.OS !== 'web' && width >= BREAKPOINTS.md && width < BREAKPOINTS.lg)
+    (Device.deviceType === Device.DeviceType.TABLET) ||
+    (width >= BREAKPOINTS.md && width < BREAKPOINTS.lg)
 
-  // Use >= so that exactly 1024px is classified as desktop, with no gap at the boundary
-  const isDesktop = isWeb || width >= BREAKPOINTS.lg
+  const isDesktop = width >= BREAKPOINTS.lg
 
   const isPhone = !isTablet && !isDesktop
 

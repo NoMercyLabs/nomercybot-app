@@ -9,6 +9,7 @@ import { useChannelStore } from '@/stores/useChannelStore'
 import { useToast } from '@/hooks/useToast'
 import { apiClient } from '@/lib/api/client'
 import type { ChatSettings } from '@/features/chat/types'
+import { useLoadingTimeout } from '@/hooks/useLoadingTimeout'
 
 const DEFAULT: ChatSettings = {
   slowMode: false,
@@ -56,7 +57,7 @@ export default function ChatSettingsScreen() {
   const toast = useToast()
   const qc = useQueryClient()
 
-  const { data: settings = DEFAULT, isLoading, isRefetching, refetch } = useQuery<ChatSettings>({
+  const { data: settings = DEFAULT, isLoading, isError, isRefetching, refetch } = useQuery<ChatSettings>({
     queryKey: ['chat', 'settings', broadcasterId],
     queryFn: () =>
       apiClient.get(`/api/${broadcasterId}/chat/settings`).then((r) => r.data),
@@ -73,6 +74,9 @@ export default function ChatSettingsScreen() {
     onError: () => toast.error('Failed to save'),
   })
 
+  const timedOut = useLoadingTimeout(isLoading)
+  const showSkeleton = isLoading && !isError && !timedOut
+
   function patch(key: keyof ChatSettings, value: unknown) {
     mutation.mutate({ [key]: value } as Partial<ChatSettings>)
   }
@@ -87,7 +91,7 @@ export default function ChatSettingsScreen() {
         <PageHeader title="Chat Settings" showBack />
 
         <View className="px-5 pt-4 gap-4">
-          {isLoading ? (
+          {showSkeleton ? (
             <View className="gap-3">
               {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)}
             </View>
