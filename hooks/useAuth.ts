@@ -28,6 +28,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const isLoading = useAuthStore((s) => s.isLoading)
   const isHydrated = useAuthStore((s) => s._hasHydrated)
+  const setHasHydrated = useAuthStore((s) => s.setHasHydrated)
   const user = useAuthStore((s) => s.user)
   const accessToken = useAuthStore((s) => s.accessToken)
   const login = useAuthStore((s) => s.login)
@@ -37,6 +38,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     init()
   }, [])
+
+  // Safety net: if onRehydrateStorage never fires (storage error, edge case),
+  // force _hasHydrated=true after 300ms so the app is never permanently blank.
+  useEffect(() => {
+    if (isHydrated) return
+    const timer = setTimeout(() => setHasHydrated(true), 300)
+    return () => clearTimeout(timer)
+  }, [isHydrated, setHasHydrated])
 
   return createElement(
     AuthContext.Provider,

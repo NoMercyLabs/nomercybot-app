@@ -26,6 +26,7 @@ interface AuthState {
    *  Always false on first synchronous render — use this to avoid redirecting
    *  to login before persisted auth state has been restored. */
   _hasHydrated: boolean
+  setHasHydrated: (value: boolean) => void
 
   init: () => Promise<void>
   login: () => Promise<void>
@@ -61,6 +62,7 @@ export const useAuthStore = create<AuthState>()(
       grantedScopes: [],
       pendingScopeUpgrade: null,
       _hasHydrated: false,
+      setHasHydrated: (value) => set({ _hasHydrated: value }),
 
       init: async () => {
         const { accessToken, expiresAt } = get()
@@ -237,10 +239,12 @@ export const useAuthStore = create<AuthState>()(
         grantedScopes: state.grantedScopes,
         // _hasHydrated intentionally excluded — it resets to false on every cold start
       }),
-      onRehydrateStorage: () => (_state, error) => {
-        if (!error) {
-          useAuthStore.setState({ _hasHydrated: true })
-        }
+      // Use the state-method pattern (zustand recommended) to avoid potential
+      // circular-reference issues with useAuthStore.setState during module init.
+      // Always set _hasHydrated=true — even on error — so the app never gets
+      // stuck on a blank screen due to a failed storage read.
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true)
       },
     },
   ),
